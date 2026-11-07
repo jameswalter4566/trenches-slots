@@ -3,7 +3,7 @@
 // in code or uses system emoji glyphs as prototype placeholders — final art
 // swaps in behind buildCellContent() without touching the choreography.
 
-import { Application, Assets, Container, Graphics, Sprite, Text, type Texture } from 'pixi.js';
+import { AnimatedSprite, Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { COLS, ROWS, SYMBOL_META, COIN_COLORS, type Cell, type SymbolId } from './paytable';
 import type { SpinResult, TumbleStep } from './sim';
 import { fmtMoney } from './session';
@@ -37,7 +37,9 @@ const outBounce: Ease = (x) => {
 
 interface Tween { t: number; dur: number; ease: Ease; apply: (v: number) => void; resolve: () => void }
 
-type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics };
+type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean };
+
+interface SheetAnim { frames: Texture[]; fps: number }
 
 const SYMBOL_IDS: SymbolId[] = [
 	'rocket', 'whale', 'frog', 'diamond', 'moon',
@@ -85,6 +87,7 @@ export class SlotBoard {
 	private meterShown = 0;
 	private firstSpin = true;
 	private textures = new Map<SymbolId, Texture>();
+	private anims = new Map<string, SheetAnim>();
 	private time = 0;
 	private idleOn = false;
 
@@ -110,6 +113,20 @@ export class SlotBoard {
 				this.textures.set(id, tex);
 			} catch { /* not generated yet */ }
 		}));
+		// sprite-sheet animations produced by tools/slice_sheet.py: <id>_win / <id>_idle strips
+		await Promise.all(SYMBOL_IDS.flatMap((id) => (['win', 'idle'] as const).map(async (kind) => {
+			try {
+				const res = await fetch(`/symbols/anim/${id}_${kind}.json`);
+				if (!res.ok) return;
+				const meta = (await res.json()) as { frames: number; fw: number; fh: number; fps: number };
+				const base = await Assets.load<Texture>(`/symbols/anim/${id}_${kind}.png`);
+				const frames: Texture[] = [];
+				for (let i = 0; i < meta.frames; i++) {
+					frames.push(new Texture({ source: base.source, frame: new Rectangle(i * meta.fw, 0, meta.fw, meta.fh) }));
+				}
+				this.anims.set(`${id}_${kind}`, { frames, fps: meta.fps || 14 });
+			} catch { /* no sheet yet */ }
+		})));
 
 		this.drawFrame();
 		this.boardLayer.x = FRAME;
@@ -208,19 +225,48 @@ export class SlotBoard {
 	}
 
 	// ---------- symbol art ----------
+	private sheetSprite(anim: SheetAnim, fit: number): AnimatedSprite {
+		const a = new AnimatedSprite(anim.frames);
+		a.anchor.set(0.5);
+		a.animationSpeed = anim.fps / 60;
+		a.loop = true;
+		a.scale.set(fit / Math.max(a.texture.width, a.texture.height));
+		a.play();
+		return a;
+	}
+
 	private buildCellSprite(cell: Cell): CellSprite {
 		const c = new Container() as CellSprite;
 		c.cellData = cell;
 		c.idlePhase = Math.random() * Math.PI * 2;
 		const meta = SYMBOL_META[cell.sym];
 		const tex = this.textures.get(cell.sym);
+		const idleSheet = this.anims.get(`${cell.sym}_idle`);
 
 		if (cell.sym === 'orb') {
-			c.addChild(tex ? this.buildTexOrb(tex, cell.orb ?? 2) : this.buildOrb(cell.orb ?? 2));
+			if (idleSheet) {
+				c.addChild(this.sheetSprite(idleSheet, 96), this.orbLabel(cell.orb ?? 2));
+				c.sheetIdle = true;
+			} else {
+				c.addChild(tex ? this.buildTexOrb(tex, cell.orb ?? 2) : this.buildOrb(cell.orb ?? 2));
+			}
 			return c;
 		}
 		if (cell.sym === 'scatter') {
-			c.addChild(tex ? this.buildTexScatter(tex) : this.buildScatter());
+			if (idleSheet) {
+				const glow = new Graphics();
+				glow.circle(0, 0, 48).fill({ color: GREEN, alpha: 0.12 });
+				c.addChild(glow, this.sheetSprite(idleSheet, 100));
+				c.sheetIdle = true;
+			} else {
+				c.addChild(tex ? this.buildTexScatter(tex) : this.buildScatter());
+			}
+			return c;
+		}
+		if (idleSheet) {
+			c.addChild(this.sheetSprite(idleSheet, 92));
+			c.sheetIdle = true;
+			this.addGleam(c);
 			return c;
 		}
 		if (tex) {
@@ -275,12 +321,7 @@ export class SlotBoard {
 		c.gleam = g;
 	}
 
-	private buildTexOrb(tex: Texture, value: number): Container {
-		const c = new Container();
-		const sp = new Sprite(tex);
-		sp.anchor.set(0.5);
-		sp.scale.set(96 / Math.max(sp.texture.width, sp.texture.height));
-		c.addChild(sp);
+	private orbLabel(value: number): Text {
 		const label = new Text({
 			text: `x${value}`,
 			style: {
@@ -290,7 +331,15 @@ export class SlotBoard {
 		});
 		label.anchor.set(0.5);
 		label.y = 32;
-		c.addChild(label);
+		return label;
+	}
+
+	private buildTexOrb(tex: Texture, value: number): Container {
+		const c = new Container();
+		const sp = new Sprite(tex);
+		sp.anchor.set(0.5);
+		sp.scale.set(96 / Math.max(sp.texture.width, sp.texture.height));
+		c.addChild(sp, this.orbLabel(value));
 		return c;
 	}
 
@@ -373,12 +422,13 @@ export class SlotBoard {
 				for (let r = 0; r < ROWS; r++) {
 					const sp = this.sprites[c][r];
 					if (!sp) continue;
+					if (sp.gleam) sp.gleam.alpha = Math.max(0, Math.sin(this.time / 650 + sp.idlePhase * 2)) ** 6;
+					if (sp.sheetIdle) continue; // frames carry the motion
 					const idle = IDLE[sp.cellData.sym];
 					const p = sp.idlePhase;
 					sp.y = this.cy(r) + (idle.bob ? Math.sin(this.time / idle.bobMs! + p) * idle.bob : 0);
 					if (idle.rot) sp.rotation = Math.sin(this.time / idle.rotMs! + p) * idle.rot;
 					if (idle.pulse) sp.scale.set(1 + Math.sin(this.time / idle.pulseMs! + p) * idle.pulse);
-					if (sp.gleam) sp.gleam.alpha = Math.max(0, Math.sin(this.time / 650 + p * 2)) ** 6;
 				}
 			}
 		}
@@ -591,6 +641,28 @@ export class SlotBoard {
 	private async winExit(sp: CellSprite, sym: SymbolId): Promise<void> {
 		const color = PARTICLE[sym] ?? 0xffffff;
 		const x = sp.x, y0 = sp.y;
+
+		// premium path: play the symbol's win sprite sheet when one exists
+		const winSheet = this.anims.get(`${sym}_win`);
+		if (winSheet) {
+			const a = new AnimatedSprite(winSheet.frames);
+			a.anchor.set(0.5);
+			a.x = x;
+			a.y = y0;
+			a.animationSpeed = winSheet.fps / 60;
+			a.loop = false;
+			a.scale.set(128 / Math.max(a.texture.width, a.texture.height));
+			this.fxLayer.addChild(a);
+			sp.destroy();
+			this.burst(x, y0, color, 7);
+			await new Promise<void>((resolve) => {
+				a.onComplete = () => resolve();
+				a.play();
+			});
+			await this.tween(120, inCubic, (v) => { a.alpha = 1 - v; });
+			a.destroy();
+			return;
+		}
 		switch (sym) {
 			case 'rocket': {
 				// flames ignite, rocket launches off the top of the board

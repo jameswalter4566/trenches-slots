@@ -86,9 +86,101 @@ electric green energy crackles arcing around the outside. NO number on it.
 
 ---
 
-## Optional round 2 (for richer in-engine animation)
-Once the set looks right, regenerate these as LAYERED pieces (separate images,
-same style, transparent):
-- rocket body WITHOUT flame + flame burst alone (engine animates thrust)
-- frog body with CLOSED eyes variant (engine blinks)
-- orb WITHOUT crackles + one crackle arc alone (engine rotates arcs)
+---
+---
+
+# PART 2 — WIN SPRITE SHEETS (the premium animations)
+
+Each symbol gets a 9-frame WIN celebration generated as ONE image (a 3x3 grid).
+One image = perfect style consistency between frames. The slicer tool fixes
+frame alignment afterwards, so don't stress tiny drift.
+
+## Workflow
+1. Generate each sheet below in ChatGPT (paste MASTER SHEET STYLE + the prompt).
+2. Save the raw image as `sheets\<symbol>_win.png` in the repo
+   (e.g. `C:\Users\james\trenches-slots\sheets\rocket_win.png`).
+3. Run the slicer (needs `pip install pillow` once):
+   `python tools\slice_sheet.py sheets\rocket_win.png rocket win 3 3 14`
+   It writes the cleaned strip + JSON into `public\symbols\anim\` and the game
+   plays it automatically on that symbol's wins. (Or just tell Claude to slice.)
+4. Keep the static PNG from PART 1 too — it's the symbol at rest on the board.
+
+## MASTER SHEET STYLE (paste at the top of every sheet prompt)
+
+> A 2D game animation sprite sheet: EXACTLY 9 frames arranged in a 3x3 grid,
+> read left to right, top to bottom. Every cell is exactly one third of the
+> image width and height. The subject appears at the IDENTICAL scale and
+> centered position in every cell — only the animation pose changes between
+> frames. Chunky 3D cartoon casino slot style, candy-gloss highlights, bold
+> saturated colors, thick vinyl-toy shapes, fully transparent background,
+> NO grid lines, NO borders, NO text, NO numbers, NO watermark.
+
+## Sheet prompts
+
+### rocket_win.png — ignition & liftoff
+The glossy white cartoon rocket with green #2be26a fins: frames 1-3 engine
+sparks then small flame ignites, frames 4-6 flame grows huge with smoke puffs
+below, frames 7-9 rocket blasts upward inside its cell leaving vertical motion
+streaks and sparks behind.
+
+### whale_win.png — jump & splash
+The fat glossy blue cartoon whale: frames 1-2 crouches/coils downward, frames
+3-5 leaps upward in an arc with water droplets trailing, frames 6-7 peak of the
+jump with a big smile, frames 8-9 splashes down with a burst of blue water
+droplets around it.
+
+### frog_win.png — spring jump
+The chunky green cartoon frog with gold chain: frames 1-2 crouches low and
+squashes, frames 3-5 springs upward with legs extended and cheeks puffed,
+frames 6-7 mid-air spin, frames 8-9 lands with a bounce and a grin. An original
+character — must NOT resemble Pepe the Frog.
+
+### diamond_win.png — flash & shatter
+The brilliant blue diamond held by golden hands: frames 1-2 glows brighter with
+light refractions, frames 3-4 bright white flash and cracks of light appear,
+frames 5-7 bursts into glowing blue crystal fragments flying outward, frames
+8-9 fragments dissolve into sparkles.
+
+### moon_win.png — golden spin
+The glossy golden full moon with the green flag: rotates one full turn across
+the 9 frames showing different crater faces, with golden sparkle particles
+growing around it, ending with a bright golden glow ring.
+
+### coinG_win.png — gold coin flip
+The thick gold cartoon casino coin with embossed dollar sign: performs one full
+3D flip across the 9 frames — face on, turning, edge-on (thin), turning,
+face on, turning, edge-on, turning, face on with a burst of tiny gold sparkles
+in the final frame.
+
+### coinP_win.png — purple coin flip
+Identical 3D flip sequence, the PURPLE coin with embossed upward chart arrow,
+purple sparkles in the final frame.
+
+### coinB_win.png — blue coin flip
+Identical 3D flip sequence, the BLUE coin with embossed percent sign, blue
+sparkles in the final frame.
+
+### coinT_win.png — teal coin flip
+Identical 3D flip sequence, the TEAL coin with embossed four-pointed star, teal
+sparkles in the final frame.
+
+### scatter_win.png — divine flare
+The crowned green god-candle on its golden pedestal: frames 1-3 the aura rays
+grow and the crown glints, frames 4-6 green energy flames rise around the
+candle body and the glow intensifies, frames 7-9 a radiant golden-green burst
+with light rays shooting outward.
+
+### orb_win.png — energy surge
+The golden energy orb with the green candlestick glyph: frames 1-3 the electric
+green crackles multiply and whip around it, frames 4-6 the orb surges blinding
+bright with molten gold swirls, frames 7-9 releases a ring-shaped golden
+shockwave outward.
+
+## Optional round 3 — IDLE sheets (looping, after the win set works)
+Same MASTER SHEET STYLE, but gentle motion that LOOPS: "frame 9 must flow
+seamlessly back into frame 1". Save as `sheets\<symbol>_idle.png`, slice with
+kind `idle` and ~10fps:
+`python tools\slice_sheet.py sheets\whale_idle.png whale idle 3 3 10`
+Good candidates: whale (tail sway + blowhole puff), frog (breathing + blink),
+orb (crackle loop), scatter (aura pulse). The engine uses procedural idle
+motion for any symbol without an idle sheet.
