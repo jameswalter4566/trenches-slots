@@ -37,12 +37,35 @@ const outBounce: Ease = (x) => {
 
 interface Tween { t: number; dur: number; ease: Ease; apply: (v: number) => void; resolve: () => void }
 
-type CellSprite = Container & { cellData: Cell; idlePhase: number };
+type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics };
 
 const SYMBOL_IDS: SymbolId[] = [
 	'rocket', 'whale', 'frog', 'diamond', 'moon',
 	'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
 ];
+
+// Per-symbol idle motion (subtle, phase-offset per cell so the board never moves in lockstep)
+const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs?: number; pulse?: number; pulseMs?: number }> = {
+	rocket:  { bob: 3.6, bobMs: 420, rot: 0.03, rotMs: 560 },   // gently hovers
+	whale:   { bob: 3.0, bobMs: 820, rot: 0.05, rotMs: 980 },   // floats
+	frog:    { bob: 2.2, bobMs: 620, pulse: 0.02, pulseMs: 500 },
+	diamond: { pulse: 0.014, pulseMs: 900 },                    // + gleam shimmer
+	moon:    { rot: 0.07, rotMs: 1150 },                        // slowly rocks
+	coinG:   { bob: 2.6, bobMs: 360 },                          // small bounce
+	coinP:   { pulse: 0.03, pulseMs: 540 },                     // pulses
+	coinB:   { rot: 0.10, rotMs: 820 },                         // rotates back and forth
+	coinT:   { pulse: 0.02, pulseMs: 720 },                     // + twinkle gleam
+	scatter: { bob: 2.0, bobMs: 800, pulse: 0.03, pulseMs: 620 },
+	orb:     { pulse: 0.025, pulseMs: 320, rot: 0.02, rotMs: 430 },
+};
+
+const GLEAM = new Set<SymbolId>(['diamond', 'coinT']);
+
+const PARTICLE: Record<SymbolId, number> = {
+	rocket: 0xff9a3d, whale: 0x5aa2ff, frog: 0x3bd45f, diamond: 0xcfeaff,
+	moon: 0xf7c843, coinG: 0xf7c843, coinP: 0xb479ff, coinB: 0x5aa2ff,
+	coinT: 0x3ee6c2, scatter: 0x2be26a, orb: 0xf7c843,
+};
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -206,6 +229,7 @@ export class SlotBoard {
 			sp.anchor.set(0.5);
 			sp.scale.set(92 / Math.max(sp.texture.width, sp.texture.height));
 			c.addChild(sp);
+			this.addGleam(c);
 			return c;
 		}
 
@@ -236,7 +260,19 @@ export class SlotBoard {
 			glyph.y = -2;
 			c.addChild(glyph);
 		}
+		this.addGleam(c);
 		return c;
+	}
+
+	private addGleam(c: CellSprite) {
+		if (!GLEAM.has(c.cellData.sym)) return;
+		const g = new Graphics();
+		g.star(0, 0, 4, 10, 3.5).fill(0xffffff);
+		g.x = -15;
+		g.y = -17;
+		g.alpha = 0;
+		c.addChild(g);
+		c.gleam = g;
 	}
 
 	private buildTexOrb(tex: Texture, value: number): Container {
@@ -332,14 +368,17 @@ export class SlotBoard {
 	private update(dt: number) {
 		this.time += dt;
 		if (this.idleOn) {
-			// gentle breathing while waiting — symbols feel alive without fighting tweens
+			// per-symbol idle motion, phase-offset per cell — alive, never lockstep
 			for (let c = 0; c < COLS; c++) {
 				for (let r = 0; r < ROWS; r++) {
 					const sp = this.sprites[c][r];
 					if (!sp) continue;
-					sp.y = this.cy(r) + Math.sin(this.time / 520 + sp.idlePhase) * 2.6;
-					const breathe = 1 + Math.sin(this.time / 680 + sp.idlePhase) * 0.012;
-					sp.scale.set(breathe);
+					const idle = IDLE[sp.cellData.sym];
+					const p = sp.idlePhase;
+					sp.y = this.cy(r) + (idle.bob ? Math.sin(this.time / idle.bobMs! + p) * idle.bob : 0);
+					if (idle.rot) sp.rotation = Math.sin(this.time / idle.rotMs! + p) * idle.rot;
+					if (idle.pulse) sp.scale.set(1 + Math.sin(this.time / idle.pulseMs! + p) * idle.pulse);
+					if (sp.gleam) sp.gleam.alpha = Math.max(0, Math.sin(this.time / 650 + p * 2)) ** 6;
 				}
 			}
 		}
@@ -477,6 +516,11 @@ export class SlotBoard {
 						}
 						if (n.cell.sym === 'orb') { sfx.orbLand(); this.burst(sp.x, sp.y, GOLD, 6); }
 						if (n.cell.sym === 'scatter') { sfx.scatterLand(); this.burst(sp.x, sp.y, GREEN, 6); }
+						// landing impact: quick squash-and-stretch
+						sp.scale.set(1.1, 0.84);
+						return this.tween(130, outCubic, (v) => {
+							sp.scale.set(1.1 - 0.1 * v, 0.84 + 0.16 * v);
+						});
 					}),
 				),
 			);
@@ -531,17 +575,90 @@ export class SlotBoard {
 	private async explodeWins(step: TumbleStep) {
 		sfx.explode();
 		this.shake = 220;
+		const jobs: Promise<void>[] = [];
 		for (const w of step.wins) {
 			for (const [c, r] of w.cells) {
 				const sp = this.sprites[c][r];
 				if (!sp) continue;
 				this.sprites[c][r] = null;
-				this.burst(sp.x, sp.y, SYMBOL_META[w.sym].tile === undefined ? GREEN : 0xffffff, 8);
-				this.burst(sp.x, sp.y, GREEN, 5);
-				void this.tween(170, inCubic, (v) => { sp.scale.set(1 - v); sp.alpha = 1 - v; }).then(() => sp.destroy());
+				jobs.push(this.winExit(sp, w.sym));
 			}
 		}
-		await sleep(230);
+		await Promise.all(jobs);
+	}
+
+	/** Per-symbol win celebration — each symbol leaves the board its own way. */
+	private async winExit(sp: CellSprite, sym: SymbolId): Promise<void> {
+		const color = PARTICLE[sym] ?? 0xffffff;
+		const x = sp.x, y0 = sp.y;
+		switch (sym) {
+			case 'rocket': {
+				// flames ignite, rocket launches off the top of the board
+				this.burst(x, y0 + 30, 0xff9a3d, 8);
+				await this.tween(300, inCubic, (v) => {
+					sp.y = y0 - v * (y0 + 170);
+					sp.rotation = -0.08 * v;
+					if (v > 0.25 && Math.random() < 0.4) this.burst(sp.x, sp.y + 34, 0xff9a3d, 1);
+				});
+				sp.destroy();
+				return;
+			}
+			case 'whale': {
+				// jumps and splashes
+				await this.tween(330, (t) => t, (v) => {
+					sp.y = y0 - Math.sin(v * Math.PI) * 48;
+					sp.rotation = Math.sin(v * Math.PI * 2) * 0.2;
+				});
+				this.burst(x, y0 + 16, 0x5aa2ff, 12);
+				break;
+			}
+			case 'frog': {
+				// squash, spring and pop
+				await this.tween(200, outCubic, (v) => {
+					sp.scale.set(1 + 0.3 * v, 1 - 0.35 * v);
+				});
+				await this.tween(160, outBack, (v) => {
+					sp.scale.set(1.3 - 0.3 * v, 0.65 + 0.55 * v);
+					sp.y = y0 - v * 26;
+				});
+				this.burst(x, y0, color, 10);
+				break;
+			}
+			case 'coinG': case 'coinP': case 'coinB': case 'coinT': {
+				// coin flip (x-scale cosine) then burst in its own color
+				await this.tween(300, (t) => t, (v) => {
+					sp.scale.x = Math.abs(Math.cos(v * Math.PI * 3)) * (1 - v * 0.2) + 0.01;
+				});
+				this.burst(x, y0, color, 9);
+				break;
+			}
+			case 'moon': {
+				// spins with golden particles
+				this.burst(x, y0, 0xf7c843, 7);
+				await this.tween(320, outCubic, (v) => {
+					sp.rotation = v * Math.PI * 3;
+				});
+				break;
+			}
+			case 'diamond': {
+				// bright flash and fragments
+				const flash = new Graphics();
+				flash.circle(0, 0, 44).fill({ color: 0xffffff, alpha: 0.9 });
+				flash.x = x; flash.y = y0;
+				this.fxLayer.addChild(flash);
+				void this.tween(240, outCubic, (v) => { flash.alpha = 0.9 * (1 - v); flash.scale.set(1 + v * 0.8); })
+					.then(() => flash.destroy());
+				this.burst(x, y0, 0xcfeaff, 12);
+				await sleep(180);
+				break;
+			}
+			default: {
+				this.burst(x, y0, color, 8);
+				this.burst(x, y0, GREEN, 4);
+			}
+		}
+		await this.tween(150, inCubic, (v) => { sp.scale.set(Math.max(0.01, 1 - v)); sp.alpha = 1 - v; });
+		sp.destroy();
 	}
 
 	private async collapse(step: TumbleStep) {
