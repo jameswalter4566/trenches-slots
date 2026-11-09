@@ -42,24 +42,24 @@ export const VAULT_PRIZES: [number, number][] = [
 // the candle animation. Mostly tiny so it plays often; rare big. A separate small
 // chance makes a candle the MYSTERY JACKPOT (value -1 -> the full price-action run).
 export const MYSTERY_MULTS: [number, number][] = [
-	[0.1, 300], [0.15, 220], [0.25, 140], [0.5, 70], [1, 30], [2, 6],
+	[0.1, 340], [0.15, 230], [0.25, 110], [0.5, 40], [1, 14], [2, 3],
 ];
-export const MYSTERY_JACKPOT_CHANCE = 0.011; // per candle
+export const MYSTERY_JACKPOT_CHANCE = 0.010; // per candle
 
 // Pays as multiples of total bet for counts [8-9, 10-11, 12+] anywhere on the grid.
 export const PAYS: Record<PayingSymbol, [number, number, number]> = {
-	goldbar: [2,    5,   12],
-	bull:    [2.5,  6,   15],
-	rocket:  [1.8,  4,   10],
-	whale:   [0.6,  1.5, 4],
-	frog:    [0.4,  1,   3],
-	diamond: [0.3,  0.8, 2.5],
-	moon:    [0.25, 0.6, 2],
-	terminal:[0.15, 0.4, 1.2],
-	coinG:   [0.15, 0.4, 1.2],
-	coinP:   [0.12, 0.3, 0.9],
-	coinB:   [0.1,  0.25, 0.7],
-	coinT:   [0.08, 0.2, 0.5],
+	goldbar: [0.85, 2.2,  5.2],
+	bull:    [1.1,  2.6,  6.5],
+	rocket:  [0.78, 1.75, 4.3],
+	whale:   [0.4,  1,    2.5],   // retired (not in WEIGHTS)
+	frog:    [0.3,  0.7,  2],     // retired
+	diamond: [0.08, 0.2,  0.58],  // mid-low (real art)
+	moon:    [0.15, 0.4,  1.3],   // retired
+	terminal:[0.062, 0.15, 0.46], // mid-low (real art)
+	coinG:   [0.062, 0.15, 0.46],
+	coinP:   [0.045, 0.115, 0.35],
+	coinB:   [0.036, 0.09, 0.27],
+	coinT:   [0.03,  0.075, 0.2],
 };
 
 export function payTier(count: number): 0 | 1 | 2 {
@@ -75,23 +75,25 @@ export const BONUS_BUY_COST = 100; // × bet
 // Per-cell draw weights — REAL distribution tuned for a ~96.5% RTP (house edge).
 // Low-pay fillers (coins) dominate so most spins lose; the animated high-pays
 // (goldbar/rocket/bull) and feature symbols are rarer. Retune with tools/rtp.ts.
+// Roster: real-art diamond + clean colored coins as low fillers, animated
+// goldbar/bull/rocket/terminal as higher pays, + features. The ugly emoji
+// placeholders (whale/frog/moon) are removed. 8 pay symbols keeps the grid
+// diluted enough for a real ~96.5% RTP. Tuned via tools/rtp.ts.
 export const WEIGHTS: [SymbolId, number][] = [
-	['coinT', 200],   // low-pay fillers — the grid is mostly these (most spins lose)
-	['coinB', 175],
-	['coinP', 150],
-	['terminal', 125],// mid-low filler (nicer art — REPLACES the old gold coin's slot)
-	['moon', 95],     // mid-low
-	['diamond', 80],
-	['whale', 60],    // mid
-	['frog', 52],
-	['goldbar', 26],  // high pays — rare
-	['rocket', 24],
+	['coinT', 180],     // low fillers — the grid is mostly these (most spins lose)
+	['coinB', 160],
+	['coinP', 140],
+	['coinG', 120],
+	['terminal', 120],  // mid-low (real art)
+	['diamond', 95],    // mid-low (real art)
+	['rocket', 24],     // high pays — rare
 	['bull', 22],
-	['bear', 14],     // feature: dumps the win
-	['orb', 16],      // feature: free-spins multiplier
-	['scatter', 12],  // mystery candle
-	['moneygun', 6],  // bonus cash
-	['vault', 2],     // rare big bonus
+	['goldbar', 26],
+	['bear', 14],       // feature: dumps the win
+	['orb', 16],        // feature: free-spins multiplier
+	['scatter', 12],    // mystery candle
+	['moneygun', 4],    // bonus cash
+	['vault', 2],       // rare big bonus
 ];
 
 // Orb multiplier values and weights (sum applied to the tumble-sequence win).
