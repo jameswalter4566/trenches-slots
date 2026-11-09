@@ -29,35 +29,35 @@ export const BEAR_FACTOR_PER = 0.5;
 
 // Each money gun sprays a cash prize (× bet). Weighted toward small, rare big.
 export const MONEYGUN_PRIZES: [number, number][] = [
-	[2, 160], [3, 130], [5, 100], [8, 70], [12, 45], [20, 24], [35, 12], [75, 5], [150, 2],
+	[0.3, 240], [0.5, 180], [1, 80], [2, 25], [3, 8], [5, 2],
 ];
 
-// The bank vault cracks open for a BIG cash prize (× bet) — rarer, heftier than the gun.
+// The bank vault cracks open for a cash prize (× bet) — rarer, heftier than the gun.
 export const VAULT_PRIZES: [number, number][] = [
-	[10, 120], [20, 100], [40, 70], [75, 40], [150, 20], [300, 8], [500, 3], [1000, 1],
+	[2, 200], [5, 120], [10, 50], [25, 15], [50, 4], [100, 1],
 ];
 
 // MYSTERY CANDLE: every god-candle tile hides a multiplier (× bet), revealed with
 // the candle animation. Mostly tiny so it plays often; rare big. A separate small
 // chance makes a candle the MYSTERY JACKPOT (value -1 -> the full price-action run).
 export const MYSTERY_MULTS: [number, number][] = [
-	[0.15, 210], [0.25, 150], [0.5, 150], [1, 120], [2, 70], [3, 42], [5, 26], [10, 13], [25, 5], [50, 2],
+	[0.1, 300], [0.15, 220], [0.25, 140], [0.5, 70], [1, 30], [2, 6],
 ];
-export const MYSTERY_JACKPOT_CHANCE = 0.018; // per candle
+export const MYSTERY_JACKPOT_CHANCE = 0.011; // per candle
 
 // Pays as multiples of total bet for counts [8-9, 10-11, 12+] anywhere on the grid.
 export const PAYS: Record<PayingSymbol, [number, number, number]> = {
-	goldbar: [12,  30,  60],
-	bull:    [15,  40,  80],
-	rocket:  [10,  25,  50],
-	whale:   [2.5, 10,  25],
-	frog:    [2,   5,   15],
-	diamond: [1.5, 2,   12],
-	moon:    [1,   1.5, 10],
-	coinG:   [0.8, 1.2, 8],
-	coinP:   [0.5, 1,   5],
-	coinB:   [0.4, 0.9, 4],
-	coinT:   [0.25, 0.75, 2],
+	goldbar: [2,    5,   12],
+	bull:    [2.5,  6,   15],
+	rocket:  [1.8,  4,   10],
+	whale:   [0.6,  1.5, 4],
+	frog:    [0.4,  1,   3],
+	diamond: [0.3,  0.8, 2.5],
+	moon:    [0.25, 0.6, 2],
+	coinG:   [0.15, 0.4, 1.2],
+	coinP:   [0.12, 0.3, 0.9],
+	coinB:   [0.1,  0.25, 0.7],
+	coinT:   [0.08, 0.2, 0.5],
 };
 
 export function payTier(count: number): 0 | 1 | 2 {
@@ -70,21 +70,26 @@ export const FREE_SPINS_AWARD = 15;
 export const FS_RETRIGGER_SPINS = 5;
 export const BONUS_BUY_COST = 100; // × bet
 
-// Per-cell draw weights for the prototype sim.
-// DEMO SET: only the fully-animated tiles land — bull + rocket (pays), the god
-// candle (scatter/jackpot) and the multiplier orb. Placeholder-art symbols
-// (whale/frog/diamond/moon/coins) are commented out until their packs arrive.
+// Per-cell draw weights — REAL distribution tuned for a ~96.5% RTP (house edge).
+// Low-pay fillers (coins) dominate so most spins lose; the animated high-pays
+// (goldbar/rocket/bull) and feature symbols are rarer. Retune with tools/rtp.ts.
 export const WEIGHTS: [SymbolId, number][] = [
-	['rocket', 55],
-	['bull', 55],
-	['goldbar', 45],
-	['bear', 26],
-	['moneygun', 20],
-	['vault', 9],
-	['scatter', 22],
-	['orb', 14],
-	// ['coinT', 180], ['coinB', 160], ['coinP', 140], ['coinG', 120],
-	// ['moon', 80], ['diamond', 70], ['frog', 60], ['whale', 50],
+	['coinT', 200],   // low-pay fillers — the grid is mostly these (most spins lose)
+	['coinB', 175],
+	['coinP', 150],
+	['coinG', 125],
+	['moon', 95],     // mid-low
+	['diamond', 80],
+	['whale', 60],    // mid
+	['frog', 52],
+	['goldbar', 26],  // high pays — rare
+	['rocket', 24],
+	['bull', 22],
+	['bear', 14],     // feature: dumps the win
+	['orb', 16],      // feature: free-spins multiplier
+	['scatter', 12],  // mystery candle
+	['moneygun', 6],  // bonus cash
+	['vault', 2],     // rare big bonus
 ];
 
 // Orb multiplier values and weights (sum applied to the tumble-sequence win).
