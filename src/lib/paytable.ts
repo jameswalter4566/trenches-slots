@@ -12,14 +12,17 @@ export type SymbolId =
 	| 'scatter'                                             // GOD CANDLE scatter
 	| 'orb'                                                 // multiplier orb
 	| 'bear'                                                // BEAR MARKET — dumps the win
-	| 'moneygun';                                           // MONEY GUN — sprays a cash prize
+	| 'moneygun'                                            // MONEY GUN — sprays a cash prize
+	| 'vault';                                              // BANK VAULT — unlocks a big cash prize
 
 export interface Cell {
 	sym: SymbolId;
-	orb?: number; // multiplier value when sym === 'orb'
+	orb?: number;     // multiplier value when sym === 'orb'
+	mystery?: number; // god-candle hidden multiplier (× bet); -1 = mystery jackpot
+	masked?: boolean; // god-candle shows '?' until revealed
 }
 
-export type PayingSymbol = Exclude<SymbolId, 'scatter' | 'orb' | 'bear' | 'moneygun'>;
+export type PayingSymbol = Exclude<SymbolId, 'scatter' | 'orb' | 'bear' | 'moneygun' | 'vault'>;
 
 // Each bear on the settled grid halves the spin win (bull pumps, bear dumps).
 export const BEAR_FACTOR_PER = 0.5;
@@ -28,6 +31,19 @@ export const BEAR_FACTOR_PER = 0.5;
 export const MONEYGUN_PRIZES: [number, number][] = [
 	[2, 160], [3, 130], [5, 100], [8, 70], [12, 45], [20, 24], [35, 12], [75, 5], [150, 2],
 ];
+
+// The bank vault cracks open for a BIG cash prize (× bet) — rarer, heftier than the gun.
+export const VAULT_PRIZES: [number, number][] = [
+	[10, 120], [20, 100], [40, 70], [75, 40], [150, 20], [300, 8], [500, 3], [1000, 1],
+];
+
+// MYSTERY CANDLE: every god-candle tile hides a multiplier (× bet), revealed with
+// the candle animation. Mostly tiny so it plays often; rare big. A separate small
+// chance makes a candle the MYSTERY JACKPOT (value -1 -> the full price-action run).
+export const MYSTERY_MULTS: [number, number][] = [
+	[0.15, 210], [0.25, 150], [0.5, 150], [1, 120], [2, 70], [3, 42], [5, 26], [10, 13], [25, 5], [50, 2],
+];
+export const MYSTERY_JACKPOT_CHANCE = 0.018; // per candle
 
 // Pays as multiples of total bet for counts [8-9, 10-11, 12+] anywhere on the grid.
 export const PAYS: Record<PayingSymbol, [number, number, number]> = {
@@ -64,6 +80,7 @@ export const WEIGHTS: [SymbolId, number][] = [
 	['goldbar', 45],
 	['bear', 26],
 	['moneygun', 20],
+	['vault', 9],
 	['scatter', 22],
 	['orb', 14],
 	// ['coinT', 180], ['coinB', 160], ['coinP', 140], ['coinG', 120],
@@ -94,6 +111,7 @@ export const SYMBOL_META: Record<SymbolId, { glyph: string; tile: number; edge: 
 	orb:     { glyph: '',          tile: 0x3d3414, edge: 0x27210c, label: 'ORB' },
 	bear:    { glyph: '\u{1F43B}', tile: 0x4a1d1d, edge: 0x301212, label: 'BEAR' },
 	moneygun:{ glyph: '\u{1F4B5}', tile: 0x16401f, edge: 0x0c2814, label: 'MONEY GUN' },
+	vault:   { glyph: '\u{1F3E6}', tile: 0x2a3340, edge: 0x1a2029, label: 'VAULT' },
 };
 
 export const COIN_COLORS: Record<string, { face: number; rim: number; glyph: number }> = {

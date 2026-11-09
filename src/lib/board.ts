@@ -39,24 +39,19 @@ const outBounce: Ease = (x) => {
 
 interface Tween { t: number; dur: number; ease: Ease; apply: (v: number) => void; resolve: () => void }
 
-interface LiveCandle { g: Graphics; previewX: number; phase: number; osc: number }
+interface LiveCandle { g: Graphics; label: Text; mult: number; masked: boolean; phase: number; osc: number; revealing?: boolean }
 type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean; mc?: LiveCandle };
 
-// The multiplier a god-candle tile previews (teaser). Weighted toward low values.
-const PREVIEW_X: [number, number][] = [
-	[2, 160], [3, 130], [4, 110], [5, 90], [8, 60], [10, 50], [15, 30], [25, 18], [50, 9], [100, 4],
-];
-const PREVIEW_TOT = PREVIEW_X.reduce((s, [, w]) => s + w, 0);
-function pickPreviewX(): number {
-	let roll = Math.random() * PREVIEW_TOT;
-	for (const [v, w] of PREVIEW_X) { roll -= w; if (roll <= 0) return v; }
-	return 2;
+/** Format a mystery multiplier for the tile label (0.15× / 1× / 25×). */
+function fmtMult(v: number): string {
+	if (v < 0) return '?';
+	return Number.isInteger(v) ? `${v}×` : `${v}×`;
 }
 
 interface SheetAnim { frames: Texture[]; fps: number; anchorX: number; anchorY: number; bodyFrac?: number }
 
 const SYMBOL_IDS: SymbolId[] = [
-	'goldbar', 'bull', 'bear', 'moneygun', 'rocket', 'whale', 'frog', 'diamond', 'moon',
+	'goldbar', 'bull', 'bear', 'moneygun', 'vault', 'rocket', 'whale', 'frog', 'diamond', 'moon',
 	'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
 ];
 
@@ -66,6 +61,7 @@ const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs
 	bull:    { bob: 2.0, bobMs: 700, pulse: 0.015, pulseMs: 900 }, // fallback if no idle sheet
 	bear:    { bob: 1.6, bobMs: 820, pulse: 0.015, pulseMs: 1000 }, // fallback if no idle sheet
 	moneygun:{ bob: 3.0, bobMs: 500, rot: 0.04, rotMs: 640 },    // fallback if no idle sheet
+	vault:   { bob: 1.2, bobMs: 900, pulse: 0.012, pulseMs: 1200 }, // fallback if no idle sheet
 	rocket:  { bob: 3.6, bobMs: 420, rot: 0.03, rotMs: 560 },   // gently hovers
 	whale:   { bob: 3.0, bobMs: 820, rot: 0.05, rotMs: 980 },   // floats
 	frog:    { bob: 2.2, bobMs: 620, pulse: 0.02, pulseMs: 500 },
@@ -82,7 +78,7 @@ const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs
 const GLEAM = new Set<SymbolId>(['diamond', 'coinT']);
 
 const PARTICLE: Record<SymbolId, number> = {
-	goldbar: 0xf7c843, bull: 0xffa24d, bear: 0xf0414d, moneygun: 0x3bd45f,
+	goldbar: 0xf7c843, bull: 0xffa24d, bear: 0xf0414d, moneygun: 0x3bd45f, vault: 0xf7c843,
 	rocket: 0xff9a3d, whale: 0x5aa2ff, frog: 0x3bd45f, diamond: 0xcfeaff,
 	moon: 0xf7c843, coinG: 0xf7c843, coinP: 0xb479ff, coinB: 0x5aa2ff,
 	coinT: 0x3ee6c2, scatter: 0x2be26a, orb: 0xf7c843,
@@ -318,19 +314,20 @@ export class SlotBoard {
 			return c;
 		}
 		if (cell.sym === 'scatter') {
-			// the god-candle: a LIVE candlestick that slowly rises then falls in place,
-			// labelled with the multiplier it previews (no "SCATTER" wording)
+			// the god-candle: a LIVE candlestick hiding a MYSTERY multiplier. Some tiles
+			// show '?', others show their value; one in a while it's the mystery jackpot.
 			const g = new Graphics();
-			const previewX = pickPreviewX();
+			const mult = cell.mystery ?? 1;
+			const masked = !!cell.masked || mult < 0;   // jackpot candles stay masked
 			const label = new Text({
-				text: `${previewX}×`, style: {
-					fontFamily: 'DynaPuff', fontSize: 22, fontWeight: '700', fill: GOLD,
+				text: masked ? '?' : fmtMult(mult), style: {
+					fontFamily: 'DynaPuff', fontSize: masked ? 30 : 22, fontWeight: '700', fill: GOLD,
 					stroke: { color: 0x3a2a00, width: 5 },
 				},
 			});
 			label.anchor.set(0.5); label.y = 44;
 			c.addChild(g, label);
-			c.mc = { g, previewX, phase: Math.random() * 2600, osc: 0 };
+			c.mc = { g, label, mult, masked, phase: Math.random() * 2600, osc: 0 };
 			this.drawLiveCandle(c);
 			return c;
 		}
@@ -485,7 +482,8 @@ export class SlotBoard {
 		const g = st.g;
 		g.clear();
 		const base = 30;                                   // candle foot (local y)
-		const maxH = 18 + Math.log(st.previewX) * 13;      // full-rise body height ∝ preview
+		// masked = medium mysterious candle; revealed = body ∝ the multiplier
+		const maxH = st.masked ? 34 : 14 + Math.max(0, Math.log(Math.max(1, st.mult))) * 13;
 		const bodyH = Math.max(4, maxH * st.osc);
 		const top = base - bodyH;
 		// aura
@@ -504,9 +502,47 @@ export class SlotBoard {
 	 * preview, then eases back), a gentle ~2.6s cosine loop. */
 	private animLiveCandle(sp: CellSprite, dt: number) {
 		const st = sp.mc!;
+		if (st.revealing) return;   // the reveal controls osc directly
 		st.phase += dt;
 		st.osc = 0.5 - 0.5 * Math.cos((st.phase / 2600) * Math.PI * 2);
 		this.drawLiveCandle(sp);
+	}
+
+	/** Reveal every mystery candle on the board (flip '?' → value, grow it), then
+	 * collect the summed candle prize onto the win meter. */
+	private async revealCandles(result: SpinResult): Promise<void> {
+		const jobs: Promise<void>[] = [];
+		for (const info of result.candleReveal) {
+			const sp = this.sprites[info.col][info.row];
+			if (sp?.cellData.sym !== 'scatter' || !sp.mc) continue;
+			jobs.push(this.popCandle(sp, info));
+		}
+		if (!jobs.length) return;
+		sfx.winPulse();
+		await Promise.all(jobs);
+		if (result.candlePrizeMicro > 0) await this.rollupAsync(result.totalWinMicro, 520);
+	}
+
+	private async popCandle(sp: CellSprite, info: { mult: number; masked: boolean }): Promise<void> {
+		const st = sp.mc!;
+		st.revealing = true;
+		const px = sp.x + FRAME, py = sp.y + FRAME;
+		if (info.mult < 0) {
+			st.label.text = 'JACKPOT'; st.label.style.fontSize = 15; st.label.style.fill = 0xffffff;
+			this.burst(px, py, GOLD, 18, this.overlayLayer);
+			sfx.win();
+		} else {
+			st.mult = info.mult; st.masked = false;
+			st.label.text = fmtMult(info.mult); st.label.style.fontSize = 22; st.label.style.fill = GOLD;
+			this.burst(px, py, GOLD, 8, this.overlayLayer);
+		}
+		// grow the candle to full with a scale pop
+		await this.tween(400, outBack, (v) => {
+			st.osc = Math.max(0, Math.min(1, v));
+			sp.scale.set(1 + Math.sin(Math.min(1, v) * Math.PI) * 0.22);
+			this.drawLiveCandle(sp);
+		});
+		sp.scale.set(1);
 	}
 
 	// ---------- tween/particle core ----------
@@ -655,6 +691,14 @@ export class SlotBoard {
 		if (result.moneygunPrizes.length > 0) {
 			await this.moneyGunFire(result);
 		}
+		// BANK VAULT: vaults unlock, gold showers, prize added to the win
+		if (result.vaultPrizes.length > 0) {
+			await this.vaultUnlock(result);
+		}
+		// MYSTERY CANDLES: reveal each hidden multiplier and collect the prize
+		if (result.candleReveal.length > 0) {
+			await this.revealCandles(result);
+		}
 
 		const betX = result.totalWinMicro / result.betMicro;
 		if (betX >= 25) await this.bigWinOverlay(result.totalWinMicro, betX);
@@ -784,10 +828,51 @@ export class SlotBoard {
 		await Promise.all(jobs);
 		void elapsed;
 
-		// roll the money prize onto the meter
-		await this.rollupAsync(result.totalWinMicro, 620);
+		// roll the money prize onto the meter (gun total, before vault/candle)
+		const gunTarget = result.totalWinMicro - result.vaultWinMicro - result.candlePrizeMicro;
+		await this.rollupAsync(gunTarget, 620);
 		await sleep(700);
 		await this.tween(280, inCubic, (v) => { banner.alpha = 1 - v; });
+		banner.destroy();
+	}
+
+	/** BANK VAULT: each vault unlocks (door swings open), a gold shower rains, the
+	 * screen shakes, and the big prize is added to the win meter. */
+	private async vaultUnlock(result: SpinResult): Promise<void> {
+		const ov = this.overlayLayer;
+		const unlock = this.anims.get('vault_win');
+		sfx.bigWin();
+		this.shake = 300;
+
+		const banner = new Text({
+			text: 'VAULT UNLOCKED', style: {
+				fontFamily: 'DynaPuff', fontSize: 38, fontWeight: '700', fill: GOLD,
+				stroke: { color: 0x3a2a00, width: 9 },
+			},
+		});
+		banner.anchor.set(0.5); banner.x = LW / 2; banner.y = FRAME + 40; banner.scale.set(0);
+		ov.addChild(banner);
+
+		const jobs: Promise<void>[] = [];
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+			const sp = this.sprites[c][r];
+			if (sp?.cellData.sym !== 'vault') continue;
+			this.burst(sp.x + FRAME, sp.y + FRAME, GOLD, 12, ov);
+			if (unlock) jobs.push(this.playSheetAt(sp, unlock));
+		}
+		await this.tween(320, outBack, (v) => banner.scale.set(v));
+
+		// gold shower: banknotes/coins rain for ~1.3s (reuse the money-rain system, gold)
+		await this.tween(1300, (t) => t, (v) => {
+			this.shake = Math.max(this.shake, 140);
+			if (Math.round(v * 60) % 2 === 0) { this.spawnBill(); this.spawnBill(); }
+		});
+		await Promise.all(jobs);
+
+		// roll the meter up to include the vault prize (candles collect after)
+		await this.rollupAsync(result.totalWinMicro - result.candlePrizeMicro, 760);
+		await sleep(750);
+		await this.tween(300, inCubic, (v) => { banner.alpha = 1 - v; });
 		banner.destroy();
 	}
 

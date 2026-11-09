@@ -5,7 +5,8 @@
 // SpinResult shape is designed to match what those books will contain.
 
 import {
-	COLS, ROWS, PAYS, WEIGHTS, ORB_VALUES, SCATTER_PAY, BEAR_FACTOR_PER, MONEYGUN_PRIZES, payTier,
+	COLS, ROWS, PAYS, WEIGHTS, ORB_VALUES, SCATTER_PAY, BEAR_FACTOR_PER, MONEYGUN_PRIZES, VAULT_PRIZES,
+	MYSTERY_MULTS, MYSTERY_JACKPOT_CHANCE, payTier,
 	type Cell, type SymbolId, type PayingSymbol,
 } from './paytable';
 
@@ -55,13 +56,27 @@ export interface SpinResult {
 	bearFactor: number;       // 0.5^bearCount applied to the gross win
 	moneygunPrizes: number[]; // per money-gun cash prize (micro), sprayed on top
 	moneygunWinMicro: number; // sum of the money-gun prizes (bear can't touch it)
-	totalWinMicro: number;    // net = round(gross × bearFactor) + moneygun
+	vaultPrizes: number[];    // per bank-vault cash prize (micro), unlocked on top
+	vaultWinMicro: number;    // sum of the vault prizes (bear-immune)
+	candleReveal: { col: number; row: number; mult: number; masked: boolean }[]; // mystery candles
+	candlePrizeMicro: number; // sum of revealed candle multipliers × bet (bear-immune)
+	mysteryJackpot: boolean;  // a candle revealed the jackpot → the full price-action run
+	totalWinMicro: number;    // net = round(gross × bearFactor) + moneygun + candlePrize
 	triggersFreeSpins: boolean;
 	retrigger: boolean;
 }
 
 const WEIGHT_TOTAL = WEIGHTS.reduce((a, [, w]) => a + w, 0);
 const ORB_TOTAL = ORB_VALUES.reduce((a, [, w]) => a + w, 0);
+const MYSTERY_TOT = MYSTERY_MULTS.reduce((a, [, w]) => a + w, 0);
+
+/** A god-candle's hidden multiplier (× bet), or -1 for the mystery jackpot. */
+function drawMystery(): number {
+	if (Math.random() < MYSTERY_JACKPOT_CHANCE) return -1;
+	let r = Math.random() * MYSTERY_TOT;
+	for (const [v, w] of MYSTERY_MULTS) { r -= w; if (r <= 0) return v; }
+	return 0.15;
+}
 
 function drawSymbol(noScatter: boolean): Cell {
 	for (;;) {
@@ -71,6 +86,7 @@ function drawSymbol(noScatter: boolean): Cell {
 			if (r < 0) {
 				if (sym === 'scatter' && noScatter) break; // redraw
 				if (sym === 'orb') return { sym, orb: drawOrbValue() };
+				if (sym === 'scatter') return { sym, mystery: drawMystery(), masked: Math.random() < 0.5 };
 				return { sym };
 			}
 		}
@@ -91,7 +107,7 @@ function detectWins(grid: Cell[][], betMicro: number): WinGroup[] {
 	for (let c = 0; c < COLS; c++) {
 		for (let r = 0; r < ROWS; r++) {
 			const sym = grid[c][r].sym;
-			if (sym === 'scatter' || sym === 'orb' || sym === 'bear' || sym === 'moneygun') continue;
+			if (sym === 'scatter' || sym === 'orb' || sym === 'bear' || sym === 'moneygun' || sym === 'vault') continue;
 			const list = bySym.get(sym as PayingSymbol) ?? [];
 			list.push([c, r]);
 			bySym.set(sym as PayingSymbol, list);
@@ -132,6 +148,21 @@ function moneygunPrizes(grid: Cell[][], betMicro: number): number[] {
 	const out: number[] = [];
 	for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
 		if (grid[c][r].sym === 'moneygun') out.push(Math.round(betMicro * drawMoneygunPrize()));
+	}
+	return out;
+}
+
+const VAULT_TOT = VAULT_PRIZES.reduce((a, [, w]) => a + w, 0);
+function drawVaultPrize(): number {
+	let roll = Math.random() * VAULT_TOT;
+	for (const [v, w] of VAULT_PRIZES) { roll -= w; if (roll <= 0) return v; }
+	return 10;
+}
+/** Each bank vault on the grid unlocks a big cash prize (× bet). */
+function vaultPrizes(grid: Cell[][], betMicro: number): number[] {
+	const out: number[] = [];
+	for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+		if (grid[c][r].sym === 'vault') out.push(Math.round(betMicro * drawVaultPrize()));
 	}
 	return out;
 }
@@ -270,6 +301,24 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 	const gunPrizes = moneygunPrizes(grid, betMicro);
 	const moneygunWin = gunPrizes.reduce((a, b) => a + b, 0);
 
+	// BANK VAULT: each vault unlocks a big cash prize on top (bear-immune).
+	const vPrizes = vaultPrizes(grid, betMicro);
+	const vaultWin = vPrizes.reduce((a, b) => a + b, 0);
+
+	// MYSTERY CANDLE: every god-candle reveals its hidden multiplier (× bet). Bear-immune.
+	// One revealing the jackpot (-1) fires the full price-action run instead of a flat pay.
+	const candleReveal: { col: number; row: number; mult: number; masked: boolean }[] = [];
+	let candlePrize = 0;
+	let mysteryJackpot = false;
+	for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+		const cell = grid[c][r];
+		if (cell.sym !== 'scatter') continue;
+		const mult = cell.mystery ?? 0;
+		candleReveal.push({ col: c, row: r, mult, masked: !!cell.masked });
+		if (mult < 0) mysteryJackpot = true;
+		else candlePrize += Math.round(betMicro * mult);
+	}
+
 	return {
 		betMicro,
 		steps,
@@ -283,7 +332,12 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 		bearFactor,
 		moneygunPrizes: gunPrizes,
 		moneygunWinMicro: moneygunWin,
-		totalWinMicro: netPayWin + moneygunWin,
+		vaultPrizes: vPrizes,
+		vaultWinMicro: vaultWin,
+		candleReveal,
+		candlePrizeMicro: candlePrize,
+		mysteryJackpot,
+		totalWinMicro: netPayWin + moneygunWin + vaultWin + candlePrize,
 		triggersFreeSpins: !opts.freeSpin && scatterCount >= 4,
 		retrigger: !!opts.freeSpin && scatterCount >= 3,
 	};

@@ -68,10 +68,10 @@
 		}
 		const result = spin(bet, { forceWin: TEST_WIN });
 		await board.replaySpin(result);
-		balance += result.totalWinMicro;
+		balance += result.totalWinMicro;   // paying win + money gun + mystery candle prizes
 		lastWin = result.totalWinMicro;
-		// 6+ god candles = JACKPOT (the candle comes alive); 4-5 = free spins
-		if (result.scatterCount >= 6) {
+		// a MYSTERY candle hit the jackpot → the full price-action run (separate payout)
+		if (result.mysteryJackpot) {
 			const win = await board.godCandleJackpot(bet, nextPeak());
 			balance += win;
 			lastWin = win;
