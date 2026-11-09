@@ -21,6 +21,65 @@ import sys
 from PIL import Image
 
 
+def key_background(im: Image.Image, tol: int = 26) -> Image.Image:
+    """Remove the baked background: BFS from every border pixel, clearing pixels
+    whose color is within `tol` per channel of the median corner color."""
+    from collections import deque
+
+    w, h = im.size
+    px = im.load()
+    corners = [px[1, 1], px[w - 2, 1], px[1, h - 2], px[w - 2, h - 2]]
+    bg = tuple(sorted(c[i] for c in corners)[2] for i in range(3))
+
+    def is_bg(p):
+        return abs(p[0] - bg[0]) <= tol and abs(p[1] - bg[1]) <= tol and abs(p[2] - bg[2]) <= tol
+
+    seen = bytearray(w * h)
+    q = deque()
+    for x in range(w):
+        for y in (0, h - 1):
+            if not seen[y * w + x] and is_bg(px[x, y]):
+                seen[y * w + x] = 1
+                q.append((x, y))
+    for y in range(h):
+        for x in (0, w - 1):
+            if not seen[y * w + x] and is_bg(px[x, y]):
+                seen[y * w + x] = 1
+                q.append((x, y))
+    while q:
+        x, y = q.popleft()
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if 0 <= nx < w and 0 <= ny < h and not seen[ny * w + nx] and is_bg(px[nx, ny]):
+                seen[ny * w + nx] = 1
+                q.append((nx, ny))
+
+    cleared = 0
+    for y in range(h):
+        row = y * w
+        for x in range(w):
+            if seen[row + x]:
+                p = px[x, y]
+                px[x, y] = (p[0], p[1], p[2], 0)
+                cleared += 1
+            else:
+                p = px[x, y]
+                if p[3] < 255:
+                    px[x, y] = (p[0], p[1], p[2], 255)
+
+    # soften the cut edge: halve alpha on art pixels touching the removed region
+    for y in range(h):
+        row = y * w
+        for x in range(w):
+            if not seen[row + x]:
+                for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                    if 0 <= nx < w and 0 <= ny < h and seen[ny * w + nx]:
+                        p = px[x, y]
+                        px[x, y] = (p[0], p[1], p[2], 128)
+                        break
+    print(f"keyed baked background rgb{bg}: cleared {cleared} px")
+    return im
+
+
 def main() -> None:
     if len(sys.argv) < 4:
         print(__doc__)
@@ -32,10 +91,18 @@ def main() -> None:
 
     im = Image.open(src).convert("RGBA")
 
-    # scrub AI alpha haze: anything below the floor becomes fully transparent
-    ALPHA_FLOOR = 32
-    a = im.split()[3].point(lambda v: 0 if v < ALPHA_FLOOR else v)
-    im.putalpha(a)
+    hist = im.split()[3].histogram()
+    transparent_px = sum(hist[:128])
+    if transparent_px < im.width * im.height * 0.005:
+        # no real transparency: baked background. Key it out by flood-filling
+        # from the sheet border — only background CONNECTED to the edges is
+        # removed, so white highlights inside the art survive.
+        im = key_background(im)
+    else:
+        # scrub AI alpha haze: anything below the floor becomes fully transparent
+        ALPHA_FLOOR = 32
+        a = im.split()[3].point(lambda v: 0 if v < ALPHA_FLOOR else v)
+        im.putalpha(a)
 
     w, h = im.size
     fw, fh = w // cols, h // rows
