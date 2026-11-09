@@ -1,0 +1,466 @@
+{
+  "fps": 24,
+  "durationMs": 1125,
+  "loop": false,
+  "frames": [
+    {
+      "frame": 1,
+      "rearAmount": 0.0,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          412.0
+        ],
+        [
+          296.0,
+          413.0
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 2,
+      "rearAmount": 0.0,
+      "bodyDipPx": 1.25,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          413.1772
+        ],
+        [
+          296.0,
+          414.1772
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 3,
+      "rearAmount": 0.0,
+      "bodyDipPx": 4.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          415.7671
+        ],
+        [
+          296.0,
+          416.7671
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 4,
+      "rearAmount": 0.0,
+      "bodyDipPx": 6.75,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          418.357
+        ],
+        [
+          296.0,
+          419.357
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 5,
+      "rearAmount": 0.0,
+      "bodyDipPx": 8.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          419.5342
+        ],
+        [
+          296.0,
+          420.5342
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 6,
+      "rearAmount": 0.055394,
+      "bodyDipPx": 7.5569,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          172.386,
+          416.2839
+        ],
+        [
+          292.5867,
+          417.8749
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 7,
+      "rearAmount": 0.198251,
+      "bodyDipPx": 6.414,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          180.7983,
+          406.0839
+        ],
+        [
+          283.9267,
+          409.1692
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 8,
+      "rearAmount": 0.393586,
+      "bodyDipPx": 4.8513,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          190.6021,
+          388.2167
+        ],
+        [
+          273.4011,
+          393.174
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 9,
+      "rearAmount": 0.606414,
+      "bodyDipPx": 3.1487,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          197.536,
+          364.6343
+        ],
+        [
+          265.2822,
+          371.2425
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 10,
+      "rearAmount": 0.801749,
+      "bodyDipPx": 1.586,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          199.38,
+          340.7063
+        ],
+        [
+          262.1386,
+          348.3535
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 11,
+      "rearAmount": 0.944606,
+      "bodyDipPx": 0.4431,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          197.7029,
+          322.8047
+        ],
+        [
+          262.8393,
+          330.8896
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 12,
+      "rearAmount": 1.0,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          196.3638,
+          315.9393
+        ],
+        [
+          263.8114,
+          324.1198
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 13,
+      "rearAmount": 0.997,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          196.446,
+          316.2862
+        ],
+        [
+          263.7488,
+          324.4627
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 14,
+      "rearAmount": 0.994,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          196.527,
+          316.6335
+        ],
+        [
+          263.6874,
+          324.8056
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 15,
+      "rearAmount": 0.9375,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          197.8472,
+          323.22
+        ],
+        [
+          262.7428,
+          331.2896
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 16,
+      "rearAmount": 0.75,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          199.3501,
+          345.2794
+        ],
+        [
+          262.5227,
+          352.7
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 17,
+      "rearAmount": 0.4375,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          192.4018,
+          379.416
+        ],
+        [
+          271.3861,
+          384.7525
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 18,
+      "rearAmount": 0.0,
+      "bodyDipPx": 12.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          423.3013
+        ],
+        [
+          296.0,
+          424.3013
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 19,
+      "rearAmount": 0.0,
+      "bodyDipPx": 7.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          418.5924
+        ],
+        [
+          296.0,
+          419.5924
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 20,
+      "rearAmount": 0.0,
+      "bodyDipPx": -4.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          408.2329
+        ],
+        [
+          296.0,
+          409.2329
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 21,
+      "rearAmount": 0.0,
+      "bodyDipPx": -1.5,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          410.5873
+        ],
+        [
+          296.0,
+          411.5873
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 22,
+      "rearAmount": 0.0,
+      "bodyDipPx": 1.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          412.9418
+        ],
+        [
+          296.0,
+          413.9418
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 23,
+      "rearAmount": 0.0,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          412.0
+        ],
+        [
+          296.0,
+          413.0
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 24,
+      "rearAmount": 0.0,
+      "bodyDipPx": 0.0,
+      "opacity": 1.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          412.0
+        ],
+        [
+          296.0,
+          413.0
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 25,
+      "rearAmount": 0.0,
+      "bodyDipPx": 0.0,
+      "opacity": 0.740741,
+      "frontHoofTips": [
+        [
+          169.0,
+          412.0
+        ],
+        [
+          296.0,
+          413.0
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 26,
+      "rearAmount": 0.0,
+      "bodyDipPx": 0.0,
+      "opacity": 0.259259,
+      "frontHoofTips": [
+        [
+          169.0,
+          412.0
+        ],
+        [
+          296.0,
+          413.0
+        ]
+      ],
+      "coatRecoloring": false
+    },
+    {
+      "frame": 27,
+      "rearAmount": 0.0,
+      "bodyDipPx": 0.0,
+      "opacity": 0.0,
+      "frontHoofTips": [
+        [
+          169.0,
+          412.0
+        ],
+        [
+          296.0,
+          413.0
+        ]
+      ],
+      "coatRecoloring": false
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "frameCount": 27,
+  "frameSize": [
+    512,
+    512
+  ],
+  "atlasSize": [
+    4608,
+    1536
+  ],
+  "smallSheets": 3,
+  "smallSheetSize": [
+    1536,
+    1536
+  ],
+  "fps": 24,
+  "durationMs": 1125,
+  "originalArtworkRigged": true,
+  "noCoatOrEyeRecoloring": true,
+  "firstFrameMatchesOriginalIdle": true,
+  "bothFrontHoovesLiftMoreThan85px": true,
+  "alphaVerified": true,
+  "allExportsPixelExact": true,
+  "finalFrameAllRGBAZero": true,
+  "nonzeroAlphaPixels": [
+    58361,
+    57735,
+    57419,
+    57220,
+    57100,
+    57380,
+    58078,
+    58839,
+    60315,
+    59644,
+    58083,
+    58017,
+    58059,
+    58072,
+    58113,
+    59989,
+    59391,
+    57711,
+    59353,
+    62603,
+    63813,
+    63283,
+    64241,
+    64907,
+    63734,
+    59883,
+    0
+  ]
+}
