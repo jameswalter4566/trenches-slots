@@ -31,6 +31,12 @@ def main() -> None:
     fps = int(sys.argv[6]) if len(sys.argv) > 6 else 14
 
     im = Image.open(src).convert("RGBA")
+
+    # scrub AI alpha haze: anything below the floor becomes fully transparent
+    ALPHA_FLOOR = 32
+    a = im.split()[3].point(lambda v: 0 if v < ALPHA_FLOOR else v)
+    im.putalpha(a)
+
     w, h = im.size
     fw, fh = w // cols, h // rows
 

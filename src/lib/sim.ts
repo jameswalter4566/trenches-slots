@@ -119,6 +119,8 @@ function collectOrbs(cells: NewCell[]): OrbCell[] {
 export interface SpinOptions {
 	/** Force a bonus-triggering grid (bonus buy). */
 	forceBonus?: boolean;
+	/** Dev preview (?testwin=rocket): plant a guaranteed 8-count win of this symbol. */
+	forceWin?: PayingSymbol;
 	/** Inside free spins: 3+ scatters retrigger instead of triggering. */
 	freeSpin?: boolean;
 	/** Free-spins running total multiplier BEFORE this spin. */
@@ -135,6 +137,13 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 			grid[c][r] = drawSymbol(false);
 			initial.push({ col: c, row: r, cell: grid[c][r] });
 		}
+	}
+	if (opts.forceWin) {
+		const spots: [number, number][] = [];
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) spots.push([c, r]);
+		spots.sort(() => Math.random() - 0.5);
+		for (const [c, r] of spots.slice(0, 8)) grid[c][r] = { sym: opts.forceWin };
+		for (const n of initial) n.cell = grid[n.col][n.row];
 	}
 	if (opts.forceBonus) {
 		// plant exactly 4 scatters on distinct columns

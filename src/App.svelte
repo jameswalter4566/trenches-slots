@@ -7,6 +7,9 @@
 	import { BONUS_BUY_COST, FREE_SPINS_AWARD, FS_RETRIGGER_SPINS } from './lib/paytable';
 
 	const BET_LEVELS = [200000, 400000, 600000, 1_000000, 2_000000, 4_000000, 10_000000, 20_000000, 50_000000, 100_000000];
+	// dev art preview: ?testwin=rocket guarantees that symbol wins every spin
+	const TEST_WIN = (new URLSearchParams(location.search).get('testwin') ?? undefined) as
+		import('./lib/paytable').PayingSymbol | undefined;
 
 	let boardEl: HTMLDivElement;
 	let board: SlotBoard | null = null;
@@ -49,7 +52,7 @@
 		spinning = true;
 		lastWin = 0;
 		balance -= bet;
-		const result = spin(bet);
+		const result = spin(bet, { forceWin: TEST_WIN });
 		await board.replaySpin(result);
 		balance += result.totalWinMicro;
 		lastWin = result.totalWinMicro;
