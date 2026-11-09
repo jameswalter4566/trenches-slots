@@ -126,29 +126,37 @@ def main() -> None:
         _kill_dark_haze(im, lum_max=70, alpha_max=150)
 
     w, h = im.size
-    fw, fh = w // cols, h // rows
+    # rounded cell size + rounded origins: avoids sub-pixel drift accumulating
+    # across many columns when the sheet isn't an exact multiple of the grid.
+    fw, fh = round(w / cols), round(h / rows)
 
     cells = []
     for r in range(rows):
         for c in range(cols):
-            frame = im.crop((c * fw, r * fh, (c + 1) * fw, (r + 1) * fh))
+            x0, y0 = round(c * w / cols), round(r * h / rows)
+            frame = im.crop((x0, y0, x0 + fw, y0 + fh))
             bbox = frame.split()[3].getbbox()  # alpha-channel bounding box
             if bbox:
                 cells.append((frame, bbox))
     if not cells:
         sys.exit("no non-empty frames found - is the background transparent?")
 
-    pad = 10
-    bw = max(b[2] - b[0] for _, b in cells)
-    bh = max(b[3] - b[1] for _, b in cells)
-    cw, ch = bw + pad * 2, bh + pad * 2
+    # ONE shared window for every frame = the union of all frame bounding boxes
+    # in cell-local coordinates. Each frame keeps its position within the cell,
+    # so deliberate motion (a rocket rising, a flame/smoke trail growing) is
+    # preserved and frames stay aligned. Per-frame re-centering is WRONG for
+    # motion animations: as the trail changes shape the subject appears to slide.
+    pad = 6
+    ux0 = min(b[0] for _, b in cells)
+    uy0 = min(b[1] for _, b in cells)
+    ux1 = max(b[2] for _, b in cells)
+    uy1 = max(b[3] for _, b in cells)
+    cw, ch = (ux1 - ux0) + pad * 2, (uy1 - uy0) + pad * 2
 
     strip = Image.new("RGBA", (cw * len(cells), ch), (0, 0, 0, 0))
-    for i, (frame, b) in enumerate(cells):
-        content = frame.crop(b)
-        ox = i * cw + (cw - (b[2] - b[0])) // 2
-        oy = (ch - (b[3] - b[1])) // 2
-        strip.paste(content, (ox, oy), content)
+    for i, (frame, _b) in enumerate(cells):
+        region = frame.crop((ux0, uy0, ux1, uy1))
+        strip.paste(region, (i * cw + pad, pad), region)
 
     out_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
