@@ -88,6 +88,7 @@ export class SlotBoard {
 	private firstSpin = true;
 	private textures = new Map<SymbolId, Texture>();
 	private anims = new Map<string, SheetAnim>();
+	private fadeMaskTex!: Texture;
 	private time = 0;
 	private idleOn = false;
 
@@ -105,6 +106,7 @@ export class SlotBoard {
 		});
 		el.appendChild(this.app.canvas);
 		this.app.stage.addChild(this.root);
+		this.fadeMaskTex = this.buildFadeMask();
 
 		// custom art: any /symbols/<id>.png present is used; otherwise drawn fallback
 		await Promise.all(SYMBOL_IDS.map(async (id) => {
@@ -225,6 +227,29 @@ export class SlotBoard {
 		if (total == null || total <= 0) { this.multBadge.visible = false; return; }
 		this.multBadge.text = `x${total}`;
 		this.multBadge.visible = true;
+	}
+
+	// Soft vertical fade mask: opaque over a symbol's own cell (and below, for a
+	// downward flame), fading to transparent ~1 tile ABOVE the cell top. A win
+	// animation masked with this plays IN FULL — a launch rises and ghosts out as
+	// it leaves its slot, instead of being hard-clipped or solidly covering the
+	// tile stacked above it.
+	private readonly FADE_TOP = CELL * 1.5;   // px of fade region above the cell top
+	private readonly FADE_BELOW = CELL * 1.6; // px of opaque region below the cell top
+	private buildFadeMask(): Texture {
+		const w = Math.round(CELL * 1.6);
+		const h = Math.round(this.FADE_TOP + this.FADE_BELOW);
+		const canvas = document.createElement('canvas');
+		canvas.width = w;
+		canvas.height = h;
+		const ctx = canvas.getContext('2d')!;
+		const grad = ctx.createLinearGradient(0, 0, 0, h);
+		grad.addColorStop(0, 'rgba(255,255,255,0)');
+		grad.addColorStop(this.FADE_TOP / h, 'rgba(255,255,255,1)');
+		grad.addColorStop(1, 'rgba(255,255,255,1)');
+		ctx.fillStyle = grad;
+		ctx.fillRect(0, 0, w, h);
+		return Texture.from(canvas);
 	}
 
 	// ---------- symbol art ----------
@@ -668,17 +693,19 @@ export class SlotBoard {
 			a.loop = false;
 			const fw = a.texture.width, fh = a.texture.height;
 			const TILE = 84;                            // body ~= one tile, never oversized
-			const bodyScale = winSheet.bodyFrac
+			const scale = winSheet.bodyFrac
 				? TILE / (winSheet.bodyFrac * fw)       // body ~= one tile
 				: TILE / Math.max(fw, fh);              // fallback: fit whole frame
-			// Cap how far the animation may reach ABOVE the anchor so a tall frame
-			// (long flame / lift) can never poke up into the tile stacked above —
-			// the symbol stays seated in its own slot, effects overflow downward.
-			const upExtent = winSheet.anchorY * fh;     // px of content above the anchor, native
-			const upCap = (0.55 * CELL) / upExtent;
-			const scale = Math.min(bodyScale, upCap);
 			a.scale.set(scale);
-			this.fxLayer.addChild(a);
+			// soft fade: opaque over this cell, transparent ~1 tile above it, so the
+			// FULL launch plays but ghosts out as it leaves the slot — never hard-cut,
+			// never solidly covering the tile stacked above.
+			const m = new Sprite(this.fadeMaskTex);
+			m.anchor.set(0.5, 0);
+			m.x = x;
+			m.y = y0 - CELL / 2 - this.FADE_TOP;        // fade→opaque boundary sits at the cell top
+			a.mask = m;
+			this.fxLayer.addChild(m, a);
 			sp.destroy();
 			this.burst(x, y0, color, 7);
 			await new Promise<void>((resolve) => {
@@ -687,6 +714,8 @@ export class SlotBoard {
 			});
 			await sleep(90);                            // let the final frame breathe
 			await this.tween(120, inCubic, (v) => { a.alpha = 1 - v; });
+			a.mask = null;
+			m.destroy();
 			a.destroy();
 			return;
 		}
