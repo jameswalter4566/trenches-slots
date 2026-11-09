@@ -5,7 +5,7 @@
 // SpinResult shape is designed to match what those books will contain.
 
 import {
-	COLS, ROWS, PAYS, WEIGHTS, ORB_VALUES, SCATTER_PAY, payTier,
+	COLS, ROWS, PAYS, WEIGHTS, ORB_VALUES, SCATTER_PAY, BEAR_FACTOR_PER, payTier,
 	type Cell, type SymbolId, type PayingSymbol,
 } from './paytable';
 
@@ -50,7 +50,10 @@ export interface SpinResult {
 	baseWinMicro: number;     // tumble wins before multiplier
 	scatterCount: number;
 	scatterWinMicro: number;
-	totalWinMicro: number;    // tumble×mult + scatter pay
+	grossWinMicro: number;    // tumble×mult + scatter, BEFORE the bear penalty
+	bearCount: number;        // bears on the settled grid (each halves the win)
+	bearFactor: number;       // 0.5^bearCount applied to the gross win
+	totalWinMicro: number;    // net paid = round(gross × bearFactor)
 	triggersFreeSpins: boolean;
 	retrigger: boolean;
 }
@@ -86,7 +89,7 @@ function detectWins(grid: Cell[][], betMicro: number): WinGroup[] {
 	for (let c = 0; c < COLS; c++) {
 		for (let r = 0; r < ROWS; r++) {
 			const sym = grid[c][r].sym;
-			if (sym === 'scatter' || sym === 'orb') continue;
+			if (sym === 'scatter' || sym === 'orb' || sym === 'bear') continue;
 			const list = bySym.get(sym as PayingSymbol) ?? [];
 			list.push([c, r]);
 			bySym.set(sym as PayingSymbol, list);
@@ -107,6 +110,12 @@ function detectWins(grid: Cell[][], betMicro: number): WinGroup[] {
 function countScatters(grid: Cell[][]): number {
 	let n = 0;
 	for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) if (grid[c][r].sym === 'scatter') n++;
+	return n;
+}
+
+function countBears(grid: Cell[][]): number {
+	let n = 0;
+	for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) if (grid[c][r].sym === 'bear') n++;
 	return n;
 }
 
@@ -234,6 +243,12 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 			? Math.round(betMicro * (SCATTER_PAY[Math.min(scatterCount, 6)] ?? SCATTER_PAY[6]))
 			: 0;
 
+	// BEAR MARKET: each bear on the settled grid halves the spin win.
+	const grossWin = tumbleWin + scatterWin;
+	const bearCount = countBears(grid);
+	const bearFactor = bearCount > 0 ? Math.pow(BEAR_FACTOR_PER, bearCount) : 1;
+	const netWin = bearCount > 0 ? Math.round(grossWin * bearFactor) : grossWin;
+
 	return {
 		betMicro,
 		steps,
@@ -242,7 +257,10 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 		baseWinMicro: baseWin,
 		scatterCount,
 		scatterWinMicro: scatterWin,
-		totalWinMicro: tumbleWin + scatterWin,
+		grossWinMicro: grossWin,
+		bearCount,
+		bearFactor,
+		totalWinMicro: netWin,
 		triggersFreeSpins: !opts.freeSpin && scatterCount >= 4,
 		retrigger: !!opts.freeSpin && scatterCount >= 3,
 	};

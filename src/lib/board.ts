@@ -56,13 +56,14 @@ function pickPreviewX(): number {
 interface SheetAnim { frames: Texture[]; fps: number; anchorX: number; anchorY: number; bodyFrac?: number }
 
 const SYMBOL_IDS: SymbolId[] = [
-	'bull', 'rocket', 'whale', 'frog', 'diamond', 'moon',
+	'bull', 'bear', 'rocket', 'whale', 'frog', 'diamond', 'moon',
 	'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
 ];
 
 // Per-symbol idle motion (subtle, phase-offset per cell so the board never moves in lockstep)
 const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs?: number; pulse?: number; pulseMs?: number }> = {
 	bull:    { bob: 2.0, bobMs: 700, pulse: 0.015, pulseMs: 900 }, // fallback if no idle sheet
+	bear:    { bob: 1.6, bobMs: 820, pulse: 0.015, pulseMs: 1000 }, // fallback if no idle sheet
 	rocket:  { bob: 3.6, bobMs: 420, rot: 0.03, rotMs: 560 },   // gently hovers
 	whale:   { bob: 3.0, bobMs: 820, rot: 0.05, rotMs: 980 },   // floats
 	frog:    { bob: 2.2, bobMs: 620, pulse: 0.02, pulseMs: 500 },
@@ -79,7 +80,7 @@ const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs
 const GLEAM = new Set<SymbolId>(['diamond', 'coinT']);
 
 const PARTICLE: Record<SymbolId, number> = {
-	bull: 0xffa24d,
+	bull: 0xffa24d, bear: 0xf0414d,
 	rocket: 0xff9a3d, whale: 0x5aa2ff, frog: 0x3bd45f, diamond: 0xcfeaff,
 	moon: 0xf7c843, coinG: 0xf7c843, coinP: 0xb479ff, coinB: 0x5aa2ff,
 	coinT: 0x3ee6c2, scatter: 0x2be26a, orb: 0xf7c843,
@@ -622,14 +623,20 @@ export class SlotBoard {
 		if (result.appliedMult > 0 && result.baseWinMicro > 0) {
 			await this.applyOrbs(result);
 		}
-		const tumbleTotal = result.totalWinMicro - result.scatterWinMicro;
-		if (tumbleTotal > 0) await this.rollupAsync(tumbleTotal, 420);
+		// roll the meter up to the GROSS win (before any bear penalty)
+		const grossTumble = result.grossWinMicro - result.scatterWinMicro;
+		if (grossTumble > 0) await this.rollupAsync(grossTumble, 420);
 
 		if (result.triggersFreeSpins || result.retrigger) {
 			await this.celebrateScatters(result);
 		}
 		if (result.scatterWinMicro > 0) {
-			await this.rollupAsync(result.totalWinMicro, 380);
+			await this.rollupAsync(result.grossWinMicro, 380);
+		}
+
+		// BEAR MARKET: a bear on the board roars and crushes the win to the net amount
+		if (result.bearCount > 0 && result.grossWinMicro > 0) {
+			await this.bearRoar(result);
 		}
 
 		const betX = result.totalWinMicro / result.betMicro;
@@ -638,6 +645,67 @@ export class SlotBoard {
 
 		this.idleOn = true;
 		this.onSettled?.(result.totalWinMicro);
+	}
+
+	/** BEAR MARKET: every bear on the board rears up and roars (red shockwave),
+	 * then the win meter is crushed from the gross win down to the bear-reduced net. */
+	private async bearRoar(result: SpinResult): Promise<void> {
+		const ov = this.overlayLayer;
+		const roar = this.anims.get('bear_win');
+		sfx.rug();
+		this.shake = 420;
+
+		const veil = new Graphics();
+		veil.rect(0, 0, LW, LH).fill({ color: RED, alpha: 1 });
+		veil.alpha = 0;
+		ov.addChild(veil);
+
+		const banner = new Text({
+			text: 'BEAR MARKET', style: {
+				fontFamily: 'DynaPuff', fontSize: 40, fontWeight: '700', fill: RED,
+				stroke: { color: 0x2a0708, width: 9 },
+			},
+		});
+		banner.anchor.set(0.5); banner.x = LW / 2; banner.y = FRAME + 40; banner.scale.set(0);
+		ov.addChild(banner);
+
+		// roar every bear on the board
+		const jobs: Promise<void>[] = [];
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+			const sp = this.sprites[c][r];
+			if (sp?.cellData.sym !== 'bear') continue;
+			this.burst(sp.x + FRAME, sp.y + FRAME, RED, 10, ov);
+			if (roar) jobs.push(this.playRoarAt(sp, roar));
+		}
+		await this.tween(220, outCubic, (v) => { veil.alpha = v * 0.34; });
+		await this.tween(360, outBack, (v) => banner.scale.set(v));
+		await Promise.all(jobs);
+
+		// crush the win: meter rolls DOWN from gross to the bear-reduced net
+		await this.rollupAsync(result.totalWinMicro, 560);
+		await sleep(650);
+		await this.tween(300, inCubic, (v) => { veil.alpha = 0.34 * (1 - v); banner.alpha = 1 - v; });
+		veil.destroy(); banner.destroy();
+	}
+
+	/** Play the bear roar sheet once over a bear cell (body-pinned, soft-fade like a win). */
+	private async playRoarAt(sp: CellSprite, sheet: SheetAnim): Promise<void> {
+		const a = new AnimatedSprite(sheet.frames);
+		a.anchor.set(sheet.anchorX, sheet.anchorY);
+		a.x = sp.x; a.y = sp.y;
+		a.animationSpeed = sheet.fps / 60;
+		a.loop = false;
+		const fw = a.texture.width;
+		a.scale.set(sheet.bodyFrac ? 84 / (sheet.bodyFrac * fw) : 84 / Math.max(fw, a.texture.height));
+		const m = new Sprite(this.fadeMaskTex);
+		m.anchor.set(0.5, 0);
+		m.x = sp.x; m.y = sp.y - CELL / 2 - this.FADE_TOP;
+		a.mask = m;
+		this.fxLayer.addChild(m, a);
+		sp.visible = false;
+		await new Promise<void>((resolve) => { a.onComplete = () => resolve(); a.play(); });
+		a.mask = null; m.destroy(); a.destroy();
+		sp.visible = true;
 	}
 
 	private async dropOutAll() {
