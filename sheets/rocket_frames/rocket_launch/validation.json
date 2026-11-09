@@ -1,0 +1,438 @@
+{
+  "passed": true,
+  "frameCount": 27,
+  "uniqueFrames": 27,
+  "frameSize": [
+    512,
+    512
+  ],
+  "atlasSize": [
+    4608,
+    1536
+  ],
+  "layout": [
+    9,
+    3
+  ],
+  "smallSheetCount": 3,
+  "smallSheetSize": [
+    1536,
+    1536
+  ],
+  "fps": 24,
+  "durationMs": 1125,
+  "pngColorMode": "RGBA",
+  "transparentBackgroundVerified": true,
+  "atlasAndSheetsPixelExact": true,
+  "apngAndWebpPixelExact": true,
+  "rocketFixedHorizontalCenter": 256,
+  "noRotation": true,
+  "singleMasterSha256": "1bfe1da9aa7ed3a2b37acfcf5c57fa217d3c22fd14baef0a9f525b28756274bc",
+  "frames": [
+    {
+      "file": "rocket_01.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 239394,
+      "partialAlphaPixels": 2539,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_02.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 239110,
+      "partialAlphaPixels": 2528,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_03.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 238080,
+      "partialAlphaPixels": 2790,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_04.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 236807,
+      "partialAlphaPixels": 2946,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_05.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 235317,
+      "partialAlphaPixels": 3113,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_06.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 233819,
+      "partialAlphaPixels": 3279,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_07.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 232520,
+      "partialAlphaPixels": 3400,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_08.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 231539,
+      "partialAlphaPixels": 3494,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_09.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 231217,
+      "partialAlphaPixels": 3498,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_10.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 229497,
+      "partialAlphaPixels": 5206,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_11.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 229283,
+      "partialAlphaPixels": 5417,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_12.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 228967,
+      "partialAlphaPixels": 5713,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_13.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 228285,
+      "partialAlphaPixels": 6381,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_14.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 227297,
+      "partialAlphaPixels": 7359,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_15.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 226109,
+      "partialAlphaPixels": 8565,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_16.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 224795,
+      "partialAlphaPixels": 9799,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_17.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 223519,
+      "partialAlphaPixels": 10849,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_18.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 222370,
+      "partialAlphaPixels": 9102,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_19.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 220736,
+      "partialAlphaPixels": 10440,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_20.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 218732,
+      "partialAlphaPixels": 12191,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_21.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 215815,
+      "partialAlphaPixels": 14812,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_22.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 214942,
+      "partialAlphaPixels": 16619,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_23.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 219715,
+      "partialAlphaPixels": 18099,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_24.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 228666,
+      "partialAlphaPixels": 19497,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_25.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 241276,
+      "partialAlphaPixels": 20868,
+      "alphaMin": 0,
+      "alphaMax": 231,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_26.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 246531,
+      "partialAlphaPixels": 15613,
+      "alphaMin": 0,
+      "alphaMax": 160,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    },
+    {
+      "file": "rocket_27.png",
+      "mode": "RGBA",
+      "size": [
+        512,
+        512
+      ],
+      "transparentPixels": 245236,
+      "partialAlphaPixels": 16908,
+      "alphaMin": 0,
+      "alphaMax": 61,
+      "cornersTransparent": true,
+      "atlasMatches": true,
+      "sheetMatches": true
+    }
+  ]
+}

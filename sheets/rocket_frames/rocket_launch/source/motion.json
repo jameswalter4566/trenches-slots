@@ -1,0 +1,249 @@
+{
+  "fps": 24,
+  "durationMs": 1125,
+  "frames": [
+    {
+      "index": 1,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 236.0,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 2,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 237.632812,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 3,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 241.9375,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 4,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 248.023438,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 5,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 255.0,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 6,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 261.976562,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 7,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 268.0625,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 8,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 272.367188,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 9,
+      "rocketCenterX": 256,
+      "rocketCenterY": 256.0,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 0.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 10,
+      "rocketCenterX": 256,
+      "rocketCenterY": 255.980796,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 10.018,
+      "rocketVisible": true
+    },
+    {
+      "index": 11,
+      "rocketCenterX": 256,
+      "rocketCenterY": 255.846365,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 18.106,
+      "rocketVisible": true
+    },
+    {
+      "index": 12,
+      "rocketCenterX": 256,
+      "rocketCenterY": 255.481481,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 29.815,
+      "rocketVisible": true
+    },
+    {
+      "index": 13,
+      "rocketCenterX": 256,
+      "rocketCenterY": 254.770919,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 43.697,
+      "rocketVisible": true
+    },
+    {
+      "index": 14,
+      "rocketCenterX": 256,
+      "rocketCenterY": 253.599451,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 58.303,
+      "rocketVisible": true
+    },
+    {
+      "index": 15,
+      "rocketCenterX": 256,
+      "rocketCenterY": 251.851852,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 72.185,
+      "rocketVisible": true
+    },
+    {
+      "index": 16,
+      "rocketCenterX": 256,
+      "rocketCenterY": 249.412894,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 83.894,
+      "rocketVisible": true
+    },
+    {
+      "index": 17,
+      "rocketCenterX": 256,
+      "rocketCenterY": 246.167353,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 91.982,
+      "rocketVisible": true
+    },
+    {
+      "index": 18,
+      "rocketCenterX": 256,
+      "rocketCenterY": 242.0,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 95.0,
+      "rocketVisible": true
+    },
+    {
+      "index": 19,
+      "rocketCenterX": 256,
+      "rocketCenterY": 229.833333,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 103,
+      "rocketVisible": true
+    },
+    {
+      "index": 20,
+      "rocketCenterX": 256,
+      "rocketCenterY": 202.666667,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 111,
+      "rocketVisible": true
+    },
+    {
+      "index": 21,
+      "rocketCenterX": 256,
+      "rocketCenterY": 160.5,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 119,
+      "rocketVisible": true
+    },
+    {
+      "index": 22,
+      "rocketCenterX": 256,
+      "rocketCenterY": 103.333333,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 127,
+      "rocketVisible": true
+    },
+    {
+      "index": 23,
+      "rocketCenterX": 256,
+      "rocketCenterY": 31.166667,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 135,
+      "rocketVisible": true
+    },
+    {
+      "index": 24,
+      "rocketCenterX": 256,
+      "rocketCenterY": -56.0,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 143,
+      "rocketVisible": true
+    },
+    {
+      "index": 25,
+      "rocketCenterX": 256,
+      "rocketCenterY": -158.166667,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 151,
+      "rocketVisible": false
+    },
+    {
+      "index": 26,
+      "rocketCenterX": 256,
+      "rocketCenterY": -275.333333,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 159,
+      "rocketVisible": false
+    },
+    {
+      "index": 27,
+      "rocketCenterX": 256,
+      "rocketCenterY": -407.5,
+      "rocketHeight": 274.0,
+      "rotation": 0,
+      "flameLength": 167,
+      "rocketVisible": false
+    }
+  ]
+}

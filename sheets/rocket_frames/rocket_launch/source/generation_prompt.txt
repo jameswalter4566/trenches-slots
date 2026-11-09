@@ -1,0 +1,8 @@
+Master artwork generation: built-in image generation; genuine transparent background requested.
+Animation: deterministic scaling and vertical translation of the single master, plus procedural flame, glow, and persistent smoke. No per-frame image generation.
+
+Use case: stylized-concept.
+Asset type: one master rocket sprite for a premium mobile slot game, to be animated mechanically from this exact illustration.
+Create ONE polished 2.5D cartoon rocket, straight upright and pointing exactly vertically upward. Front-facing, bilateral symmetric silhouette, no tilt, no diagonal perspective. Glossy white and softly silver rounded capsule body, rounded glossy red nose cone, TWO broad swept red side fins, a vivid blue circular glass window with a warm gold metallic ring and tiny metallic rivets, a small gold lower collar, and a centered visible dark metallic engine nozzle at the bottom. Friendly, colorful, premium casual mobile game art, richly shaded smooth surfaces, crisp clean silhouette, tasteful bright reflections from upper left, subtle soft cool shading, strong readability at small icon size. Not photorealistic, not flat vector, not line-drawn.
+Full rocket visible with ample transparent margins, centered in a square image; rocket roughly 75% of image height. Its central axis must be exactly vertical. The nozzle must face straight down and be clearly separable from both fins. No flame, no exhaust, no smoke, no glow outside the object, no ground shadow, no launch pad, no extra objects.
+Genuine transparent RGBA background everywhere outside the rocket silhouette. No background color, no checkerboard, no white rectangle, no text, no labels, no border, no watermark. Only one rocket illustration; NOT a sprite sheet.

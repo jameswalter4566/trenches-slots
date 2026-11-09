@@ -127,6 +127,23 @@ def key_background(im: Image.Image, tol: int = 26) -> Image.Image:
     return im
 
 
+def _clean(im: Image.Image) -> Image.Image:
+    """Normalize an input image's alpha: key a baked background, or scrub AI haze
+    and dark halo. A no-op on clean straight-RGBA frames."""
+    hist = im.split()[3].histogram()
+    transparent_px = sum(hist[:128])
+    if transparent_px < im.width * im.height * 0.005:
+        # no real transparency: baked background. Flood-fill key from the border
+        # so only edge-connected background dies; art-internal whites survive.
+        return key_background(im)
+    # scrub AI alpha haze: anything below the floor becomes fully transparent
+    a = im.split()[3].point(lambda v: 0 if v < 32 else v)
+    im.putalpha(a)
+    # dark-haze kill: dim + semi-transparent baked halo cleared, bright art kept
+    _kill_dark_haze(im, lum_max=70, alpha_max=150)
+    return im
+
+
 def main() -> None:
     if len(sys.argv) < 4:
         print(__doc__)
@@ -136,38 +153,38 @@ def main() -> None:
     cols = int(sys.argv[5]) if len(sys.argv) > 5 else 3
     fps = int(sys.argv[6]) if len(sys.argv) > 6 else 14
 
-    im = Image.open(src).convert("RGBA")
-
-    hist = im.split()[3].histogram()
-    transparent_px = sum(hist[:128])
-    if transparent_px < im.width * im.height * 0.005:
-        # no real transparency: baked background. Key it out by flood-filling
-        # from the sheet border — only background CONNECTED to the edges is
-        # removed, so white highlights inside the art survive.
-        im = key_background(im)
-    else:
-        # scrub AI alpha haze: anything below the floor becomes fully transparent
-        ALPHA_FLOOR = 32
-        a = im.split()[3].point(lambda v: 0 if v < ALPHA_FLOOR else v)
-        im.putalpha(a)
-        # dark-haze kill: AI often bakes a dim mottled halo at mid alpha. Clear
-        # pixels that are both DIM and SEMI-transparent (background), while bright
-        # flame/smoke/art survives even at low alpha.
-        _kill_dark_haze(im, lum_max=70, alpha_max=150)
-
-    w, h = im.size
-    # rounded cell size + rounded origins: avoids sub-pixel drift accumulating
-    # across many columns when the sheet isn't an exact multiple of the grid.
-    fw, fh = round(w / cols), round(h / rows)
-
     cells = []
-    for r in range(rows):
-        for c in range(cols):
-            x0, y0 = round(c * w / cols), round(r * h / rows)
-            frame = im.crop((x0, y0, x0 + fw, y0 + fh))
-            bbox = frame.split()[3].getbbox()  # alpha-channel bounding box
+    aligned = False  # folder of pre-aligned frames -> don't re-center per frame
+
+    if os.path.isdir(src):
+        # folder of individual frame PNGs (already a full, shared-coordinate
+        # canvas each). Sort by name, clean each, keep as-is. No grid cutting.
+        import glob
+        paths = sorted(glob.glob(os.path.join(src, "*.png")))
+        if not paths:
+            sys.exit(f"no PNG frames found in folder {src}")
+        aligned = True
+        fw = fh = 0
+        for p in paths:
+            frame = _clean(Image.open(p).convert("RGBA"))
+            fw, fh = frame.size
+            bbox = frame.split()[3].getbbox()
             if bbox:
                 cells.append((frame, bbox))
+        print(f"loaded {len(cells)} pre-aligned frames from folder")
+    else:
+        im = _clean(Image.open(src).convert("RGBA"))
+        w, h = im.size
+        # rounded cell size + rounded origins: avoids sub-pixel drift accumulating
+        # across many columns when the sheet isn't an exact multiple of the grid.
+        fw, fh = round(w / cols), round(h / rows)
+        for r in range(rows):
+            for c in range(cols):
+                x0, y0 = round(c * w / cols), round(r * h / rows)
+                frame = im.crop((x0, y0, x0 + fw, y0 + fh))
+                bbox = frame.split()[3].getbbox()  # alpha-channel bounding box
+                if bbox:
+                    cells.append((frame, bbox))
     if not cells:
         sys.exit("no non-empty frames found - is the background transparent?")
 
@@ -203,20 +220,23 @@ def main() -> None:
 
     # PIN the symbol body so it stays in place while its effect (flame, smoke,
     # splash, sparks) trails freely. Anchor = per-frame centroid of the body's
-    # saturated color; align every frame's anchor to frame 0's, then crop all
-    # frames to one shared window.
-    ref = next((a for a in anchors if a), None)
-    if ref is None:
-        anchors = [((f.width / 2), (f.height / 2)) for f, _ in cells]
-        ref = anchors[0]
-    # shift each frame so its body sits where frame 0's body is
-    shifted: list[Image.Image] = []
-    for (frame, _b), anch in zip(cells, anchors):
-        a = anch or ref
-        dx, dy = round(ref[0] - a[0]), round(ref[1] - a[1])
-        canvas = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-        canvas.paste(frame, (dx, dy), frame)
-        shifted.append(canvas)
+    # saturated color; align every frame's anchor to frame 0's. SKIPPED for
+    # folder input: those frames are authored in a shared coordinate system and
+    # must not be re-centered (their lead-in is already fixed-center).
+    if aligned:
+        shifted = [frame for frame, _ in cells]
+    else:
+        ref = next((a for a in anchors if a), None)
+        if ref is None:
+            anchors = [((f.width / 2), (f.height / 2)) for f, _ in cells]
+            ref = anchors[0]
+        shifted = []
+        for (frame, _b), anch in zip(cells, anchors):
+            a = anch or ref
+            dx, dy = round(ref[0] - a[0]), round(ref[1] - a[1])
+            canvas = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+            canvas.paste(frame, (dx, dy), frame)
+            shifted.append(canvas)
 
     # shared window = union of the aligned frames' bboxes
     boxes = [s.split()[3].getbbox() or (0, 0, s.width, s.height) for s in shifted]
