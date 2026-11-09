@@ -21,6 +21,36 @@ import sys
 from PIL import Image
 
 
+def _body_stats(frame: Image.Image):
+    """(centroid_x, centroid_y, body_pixel_count) for the symbol's own saturated
+    color — NOT the warm flame (R&G both high) and NOT gray/white smoke (low
+    saturation). Pins the symbol in place and measures how much of it is present
+    (used to trim fly-away tail frames). Returns (None, 0) if no body found."""
+    px = frame.load()
+    w, h = frame.size
+    sx = sy = sw = 0.0
+    count = 0
+    step = 2 if w * h > 40000 else 1  # subsample big cells for speed
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            r, g, b, a = px[x, y]
+            if a < 150:
+                continue
+            mx, mn = max(r, g, b), min(r, g, b)
+            sat = mx - mn
+            if sat < 55 or mx < 110:
+                continue  # gray smoke / dim
+            if r > 150 and g > 110 and b < 120:
+                continue  # orange/yellow flame
+            sx += x * sat
+            sy += y * sat
+            sw += sat
+            count += 1
+    if sw == 0:
+        return None, 0
+    return (sx / sw, sy / sw), count
+
+
 def _kill_dark_haze(im: Image.Image, lum_max: int, alpha_max: int) -> None:
     """Clear dim + semi-transparent pixels (baked dark halo); keep bright art."""
     px = im.load()
@@ -141,21 +171,65 @@ def main() -> None:
     if not cells:
         sys.exit("no non-empty frames found - is the background transparent?")
 
-    # ONE shared window for every frame = the union of all frame bounding boxes
-    # in cell-local coordinates. Each frame keeps its position within the cell,
-    # so deliberate motion (a rocket rising, a flame/smoke trail growing) is
-    # preserved and frames stay aligned. Per-frame re-centering is WRONG for
-    # motion animations: as the trail changes shape the subject appears to slide.
+    stats = [_body_stats(f) for f, _ in cells]
+    anchors = [s[0] for s in stats]
+    counts = [s[1] for s in stats]
+
+    # TRIM the fly-away tail: AI motion sheets often launch the subject off the
+    # cell in the final frames. For a slot tile the symbol must stay put, so drop
+    # trailing frames where the body has either (a) mostly left (< 45% of peak
+    # body pixels) or (b) DRIFTED too far from its home position (> 16% of the
+    # cell) — this catches a subject that is tilting/sliding out of frame while
+    # still largely visible. Keeps the in-place lead-in intact.
+    peak = max(counts) if counts else 0
+    home = next((a for a in anchors if a), None)
+    drift_max = 0.16 * min(fw, fh)
+    if peak and home:
+        def gone(i: int) -> bool:
+            if counts[i] < 0.45 * peak:
+                return True
+            a = anchors[i]
+            if a is None:
+                return True
+            return ((a[0] - home[0]) ** 2 + (a[1] - home[1]) ** 2) ** 0.5 > drift_max
+        last = len(cells) - 1
+        while last > 0 and gone(last):
+            last -= 1
+        keep = last + 1
+        if keep < len(cells):
+            print(f"trimmed {len(cells) - keep} fly-away tail frame(s) (body left the cell)")
+            cells = cells[:keep]
+            anchors = anchors[:keep]
+
+    # PIN the symbol body so it stays in place while its effect (flame, smoke,
+    # splash, sparks) trails freely. Anchor = per-frame centroid of the body's
+    # saturated color; align every frame's anchor to frame 0's, then crop all
+    # frames to one shared window.
+    ref = next((a for a in anchors if a), None)
+    if ref is None:
+        anchors = [((f.width / 2), (f.height / 2)) for f, _ in cells]
+        ref = anchors[0]
+    # shift each frame so its body sits where frame 0's body is
+    shifted: list[Image.Image] = []
+    for (frame, _b), anch in zip(cells, anchors):
+        a = anch or ref
+        dx, dy = round(ref[0] - a[0]), round(ref[1] - a[1])
+        canvas = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+        canvas.paste(frame, (dx, dy), frame)
+        shifted.append(canvas)
+
+    # shared window = union of the aligned frames' bboxes
+    boxes = [s.split()[3].getbbox() or (0, 0, s.width, s.height) for s in shifted]
     pad = 6
-    ux0 = min(b[0] for _, b in cells)
-    uy0 = min(b[1] for _, b in cells)
-    ux1 = max(b[2] for _, b in cells)
-    uy1 = max(b[3] for _, b in cells)
+    ux0 = min(b[0] for b in boxes)
+    uy0 = min(b[1] for b in boxes)
+    ux1 = max(b[2] for b in boxes)
+    uy1 = max(b[3] for b in boxes)
     cw, ch = (ux1 - ux0) + pad * 2, (uy1 - uy0) + pad * 2
 
-    strip = Image.new("RGBA", (cw * len(cells), ch), (0, 0, 0, 0))
-    for i, (frame, _b) in enumerate(cells):
-        region = frame.crop((ux0, uy0, ux1, uy1))
+    strip = Image.new("RGBA", (cw * len(shifted), ch), (0, 0, 0, 0))
+    for i, s in enumerate(shifted):
+        region = s.crop((ux0, uy0, ux1, uy1))
         strip.paste(region, (i * cw + pad, pad), region)
 
     out_dir = os.path.join(
