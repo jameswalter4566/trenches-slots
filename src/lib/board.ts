@@ -667,12 +667,17 @@ export class SlotBoard {
 			a.animationSpeed = winSheet.fps / 60;
 			a.loop = false;
 			const fw = a.texture.width, fh = a.texture.height;
-			const TILE = 96;
+			const TILE = 82;                            // slightly under the cell so it never looks oversized
 			const scale = winSheet.bodyFrac
 				? TILE / (winSheet.bodyFrac * fw)       // body ~= one tile
 				: TILE / Math.max(fw, fh);              // fallback: fit whole frame
 			a.scale.set(scale);
-			this.fxLayer.addChild(a);
+			// clip to this cell (a hair of headroom) so a launch/jump shoots out
+			// of its own slot without ever crossing into the neighbouring tiles
+			const clip = new Graphics();
+			clip.roundRect(x - CELL / 2, y0 - CELL / 2 - 10, CELL, CELL + 10, 16).fill(0xffffff);
+			a.mask = clip;
+			this.fxLayer.addChild(clip, a);
 			sp.destroy();
 			this.burst(x, y0, color, 7);
 			await new Promise<void>((resolve) => {
@@ -681,6 +686,8 @@ export class SlotBoard {
 			});
 			await sleep(90);                            // let the final frame breathe
 			await this.tween(120, inCubic, (v) => { a.alpha = 1 - v; });
+			a.mask = null;
+			clip.destroy();
 			a.destroy();
 			return;
 		}
