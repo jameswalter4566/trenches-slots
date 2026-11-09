@@ -1,0 +1,493 @@
+{
+  "fps": 24,
+  "durationMs": 1125,
+  "loop": false,
+  "frames": [
+    {
+      "frame": 1,
+      "priceRise": 0.0,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 0.0,
+      "barWidths": [
+        145.0,
+        119.0,
+        110.0,
+        81.0
+      ],
+      "lastPriceY": 323.14802
+    },
+    {
+      "frame": 2,
+      "priceRise": 0.0,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 3.407407,
+      "barWidths": [
+        146.61431,
+        119.98592,
+        110.06822,
+        80.35741
+      ],
+      "lastPriceY": 320.69585
+    },
+    {
+      "frame": 3,
+      "priceRise": 0.0,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 6.814815,
+      "barWidths": [
+        148.14159,
+        120.70337,
+        109.84589,
+        79.5354
+      ],
+      "lastPriceY": 318.30206
+    },
+    {
+      "frame": 4,
+      "priceRise": 0.0,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 10.222222,
+      "barWidths": [
+        149.49951,
+        121.11366,
+        109.34499,
+        78.57828
+      ],
+      "lastPriceY": 315.99986
+    },
+    {
+      "frame": 5,
+      "priceRise": 0.0,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 13.62963,
+      "barWidths": [
+        150.61486,
+        121.19468,
+        108.59252,
+        77.53765
+      ],
+      "lastPriceY": 313.81751
+    },
+    {
+      "frame": 6,
+      "priceRise": 0.0,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 17.037037,
+      "barWidths": [
+        151.42751,
+        120.94205,
+        107.62904,
+        76.46961
+      ],
+      "lastPriceY": 311.77684
+    },
+    {
+      "frame": 7,
+      "priceRise": 0.0,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 20.444444,
+      "barWidths": [
+        151.89365,
+        120.36941,
+        106.50651,
+        75.43174
+      ],
+      "lastPriceY": 309.89201
+    },
+    {
+      "frame": 8,
+      "priceRise": 0.04296875,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 23.851852,
+      "barWidths": [
+        152.33191,
+        119.80839,
+        105.54324,
+        74.69484
+      ],
+      "lastPriceY": 307.40636
+    },
+    {
+      "frame": 9,
+      "priceRise": 0.15625,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 27.259259,
+      "barWidths": [
+        152.95593,
+        119.49687,
+        104.96913,
+        74.44693
+      ],
+      "lastPriceY": 299.54191
+    },
+    {
+      "frame": 10,
+      "priceRise": 0.31640625,
+      "screenPulse": 0.07407407407407407,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 30.666667,
+      "barWidths": [
+        153.59343,
+        119.33033,
+        104.71115,
+        74.61472
+      ],
+      "lastPriceY": 287.74651
+    },
+    {
+      "frame": 11,
+      "priceRise": 0.5,
+      "screenPulse": 0.25925925925925924,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 34.074074,
+      "barWidths": [
+        154.09162,
+        119.21412,
+        104.69439,
+        75.11516
+      ],
+      "lastPriceY": 274.03979
+    },
+    {
+      "frame": 12,
+      "priceRise": 0.68359375,
+      "screenPulse": 0.5,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 37.481481,
+      "barWidths": [
+        154.31531,
+        119.05973,
+        104.8385,
+        75.85356
+      ],
+      "lastPriceY": 260.4345
+    },
+    {
+      "frame": 13,
+      "priceRise": 0.84375,
+      "screenPulse": 0.7407407407407407,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 40.888889,
+      "barWidths": [
+        154.14414,
+        118.78069,
+        105.05448,
+        76.72242
+      ],
+      "lastPriceY": 248.93792
+    },
+    {
+      "frame": 14,
+      "priceRise": 0.95703125,
+      "screenPulse": 0.925925925925926,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 44.296296,
+      "barWidths": [
+        153.4689,
+        118.28844,
+        105.24186,
+        77.60088
+      ],
+      "lastPriceY": 241.24439
+    },
+    {
+      "frame": 15,
+      "priceRise": 1.0,
+      "screenPulse": 1.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 47.703704,
+      "barWidths": [
+        152.18735,
+        117.48819,
+        105.28657,
+        78.35492
+      ],
+      "lastPriceY": 236.41841
+    },
+    {
+      "frame": 16,
+      "priceRise": 1.0,
+      "screenPulse": 1.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 51.111111,
+      "barWidths": [
+        150.60586,
+        116.63071,
+        105.36415,
+        79.09221
+      ],
+      "lastPriceY": 235.29022
+    },
+    {
+      "frame": 17,
+      "priceRise": 1.0,
+      "screenPulse": 1.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 54.518519,
+      "barWidths": [
+        149.15344,
+        116.063,
+        105.72823,
+        79.98783
+      ],
+      "lastPriceY": 234.08655
+    },
+    {
+      "frame": 18,
+      "priceRise": 1.0,
+      "screenPulse": 0.9259259259259259,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 57.925926,
+      "barWidths": [
+        147.90838,
+        115.81568,
+        106.35919,
+        80.99351
+      ],
+      "lastPriceY": 232.77643
+    },
+    {
+      "frame": 19,
+      "priceRise": 1.0,
+      "screenPulse": 0.7407407407407407,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 61.333333,
+      "barWidths": [
+        146.93782,
+        115.90206,
+        107.223,
+        82.05502
+      ],
+      "lastPriceY": 231.33465
+    },
+    {
+      "frame": 20,
+      "priceRise": 0.98125,
+      "screenPulse": 0.5,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 64.740741,
+      "barWidths": [
+        146.14407,
+        116.18626,
+        108.1606,
+        83.02139
+      ],
+      "lastPriceY": 231.37435
+    },
+    {
+      "frame": 21,
+      "priceRise": 0.94,
+      "screenPulse": 0.2592592592592593,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 68.148148,
+      "barWidths": [
+        145.53184,
+        116.61961,
+        109.09289,
+        83.81672
+      ],
+      "lastPriceY": 234.40982
+    },
+    {
+      "frame": 22,
+      "priceRise": 0.89875,
+      "screenPulse": 0.07407407407407396,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 71.555556,
+      "barWidths": [
+        145.29635,
+        117.3207,
+        110.09125,
+        84.49951
+      ],
+      "lastPriceY": 239.64153
+    },
+    {
+      "frame": 23,
+      "priceRise": 0.88,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 74.962963,
+      "barWidths": [
+        145.61249,
+        118.39365,
+        111.22352,
+        85.13434
+      ],
+      "lastPriceY": 242.76178
+    },
+    {
+      "frame": 24,
+      "priceRise": 0.88,
+      "screenPulse": 0.0,
+      "opacity": 1.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 78.37037,
+      "barWidths": [
+        146.42514,
+        119.74731,
+        112.4001,
+        85.66318
+      ],
+      "lastPriceY": 244.11238
+    },
+    {
+      "frame": 25,
+      "priceRise": 0.88,
+      "screenPulse": 0.0,
+      "opacity": 0.7407407407407407,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 81.777778,
+      "barWidths": [
+        147.54049,
+        121.17743,
+        113.44506,
+        85.96376
+      ],
+      "lastPriceY": 245.34762
+    },
+    {
+      "frame": 26,
+      "priceRise": 0.88,
+      "screenPulse": 0.0,
+      "opacity": 0.2592592592592593,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 85.185185,
+      "barWidths": [
+        148.89841,
+        122.60694,
+        114.30206,
+        86.01988
+      ],
+      "lastPriceY": 246.49673
+    },
+    {
+      "frame": 27,
+      "priceRise": 0.88,
+      "screenPulse": 0.0,
+      "opacity": 0.0,
+      "monitorX": 0.0,
+      "monitorY": 0.0,
+      "monitorRotation": 0.0,
+      "monitorScale": 1.0,
+      "tickScrollPx": 88.592593,
+      "barWidths": [
+        150.42569,
+        123.95875,
+        114.9249,
+        85.82852
+      ],
+      "lastPriceY": 247.59362
+    }
+  ]
+}

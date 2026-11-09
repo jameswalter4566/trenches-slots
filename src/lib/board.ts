@@ -52,7 +52,7 @@ interface SheetAnim { frames: Texture[]; fps: number; anchorX: number; anchorY: 
 
 const SYMBOL_IDS: SymbolId[] = [
 	'goldbar', 'bull', 'bear', 'moneygun', 'vault', 'rocket', 'whale', 'frog', 'diamond', 'moon',
-	'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
+	'terminal', 'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
 ];
 
 // Per-symbol idle motion (subtle, phase-offset per cell so the board never moves in lockstep)
@@ -62,6 +62,7 @@ const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs
 	bear:    { bob: 1.6, bobMs: 820, pulse: 0.015, pulseMs: 1000 }, // fallback if no idle sheet
 	moneygun:{ bob: 3.0, bobMs: 500, rot: 0.04, rotMs: 640 },    // fallback if no idle sheet
 	vault:   { bob: 1.2, bobMs: 900, pulse: 0.012, pulseMs: 1200 }, // fallback if no idle sheet
+	terminal:{ bob: 1.2, bobMs: 900, pulse: 0.01, pulseMs: 1100 }, // fallback if no idle sheet
 	rocket:  { bob: 3.6, bobMs: 420, rot: 0.03, rotMs: 560 },   // gently hovers
 	whale:   { bob: 3.0, bobMs: 820, rot: 0.05, rotMs: 980 },   // floats
 	frog:    { bob: 2.2, bobMs: 620, pulse: 0.02, pulseMs: 500 },
@@ -78,7 +79,7 @@ const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs
 const GLEAM = new Set<SymbolId>(['diamond', 'coinT']);
 
 const PARTICLE: Record<SymbolId, number> = {
-	goldbar: 0xf7c843, bull: 0xffa24d, bear: 0xf0414d, moneygun: 0x3bd45f, vault: 0xf7c843,
+	goldbar: 0xf7c843, bull: 0xffa24d, bear: 0xf0414d, moneygun: 0x3bd45f, vault: 0xf7c843, terminal: 0x27d7f5,
 	rocket: 0xff9a3d, whale: 0x5aa2ff, frog: 0x3bd45f, diamond: 0xcfeaff,
 	moon: 0xf7c843, coinG: 0xf7c843, coinP: 0xb479ff, coinB: 0x5aa2ff,
 	coinT: 0x3ee6c2, scatter: 0x2be26a, orb: 0xf7c843,

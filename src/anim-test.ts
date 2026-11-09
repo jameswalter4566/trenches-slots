@@ -6,7 +6,7 @@ import { AnimatedSprite, Application, Assets, Container, Rectangle, Sprite, Text
 
 const SYMBOLS = [
 	'goldbar', 'bull', 'bear', 'moneygun', 'vault', 'rocket', 'whale', 'frog', 'diamond', 'moon',
-	'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
+	'terminal', 'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
 ];
 const KINDS = ['win', 'idle'] as const;
 

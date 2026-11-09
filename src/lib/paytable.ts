@@ -8,6 +8,7 @@ export const ROWS = 5;
 
 export type SymbolId =
 	| 'goldbar' | 'bull' | 'rocket' | 'whale' | 'frog' | 'diamond' | 'moon'  // high pays
+	| 'terminal'                                            // mid-low filler
 	| 'coinG' | 'coinP' | 'coinB' | 'coinT'                 // low pays (coins)
 	| 'scatter'                                             // GOD CANDLE scatter
 	| 'orb'                                                 // multiplier orb
@@ -54,6 +55,7 @@ export const PAYS: Record<PayingSymbol, [number, number, number]> = {
 	frog:    [0.4,  1,   3],
 	diamond: [0.3,  0.8, 2.5],
 	moon:    [0.25, 0.6, 2],
+	terminal:[0.15, 0.4, 1.2],
 	coinG:   [0.15, 0.4, 1.2],
 	coinP:   [0.12, 0.3, 0.9],
 	coinB:   [0.1,  0.25, 0.7],
@@ -77,7 +79,7 @@ export const WEIGHTS: [SymbolId, number][] = [
 	['coinT', 200],   // low-pay fillers — the grid is mostly these (most spins lose)
 	['coinB', 175],
 	['coinP', 150],
-	['coinG', 125],
+	['terminal', 125],// mid-low filler (nicer art — REPLACES the old gold coin's slot)
 	['moon', 95],     // mid-low
 	['diamond', 80],
 	['whale', 60],    // mid
@@ -112,6 +114,7 @@ export const SYMBOL_META: Record<SymbolId, { glyph: string; tile: number; edge: 
 	coinP:   { glyph: '▲',    tile: 0x3c2050, edge: 0x271334, label: 'PURP' },
 	coinB:   { glyph: '%',         tile: 0x1b2d52, edge: 0x101c36, label: 'BLUE' },
 	coinT:   { glyph: '✦',    tile: 0x14433e, edge: 0x0b2b27, label: 'TEAL' },
+	terminal:{ glyph: '\u{1F4C8}', tile: 0x16263a, edge: 0x0c1824, label: 'TERMINAL' },
 	scatter: { glyph: '',          tile: 0x113322, edge: 0x0a2015, label: 'GOD CANDLE' },
 	orb:     { glyph: '',          tile: 0x3d3414, edge: 0x27210c, label: 'ORB' },
 	bear:    { glyph: '\u{1F43B}', tile: 0x4a1d1d, edge: 0x301212, label: 'BEAR' },
