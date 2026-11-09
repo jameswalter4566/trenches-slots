@@ -21,6 +21,7 @@ const LH = BOARD_H + FRAME * 2 + METER_H + 14;
 const GREEN = 0x2be26a;
 const RED = 0xf0414d;
 const GOLD = 0xf7c843;
+const CYAN = 0x27d7f5;
 const EMOJI_FONT = 'Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, sans-serif';
 
 // ---------- tweens ----------
@@ -38,7 +39,19 @@ const outBounce: Ease = (x) => {
 
 interface Tween { t: number; dur: number; ease: Ease; apply: (v: number) => void; resolve: () => void }
 
-type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean };
+interface LiveCandle { g: Graphics; previewX: number; phase: number; osc: number }
+type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean; mc?: LiveCandle };
+
+// The multiplier a god-candle tile previews (teaser). Weighted toward low values.
+const PREVIEW_X: [number, number][] = [
+	[2, 160], [3, 130], [4, 110], [5, 90], [8, 60], [10, 50], [15, 30], [25, 18], [50, 9], [100, 4],
+];
+const PREVIEW_TOT = PREVIEW_X.reduce((s, [, w]) => s + w, 0);
+function pickPreviewX(): number {
+	let roll = Math.random() * PREVIEW_TOT;
+	for (const [v, w] of PREVIEW_X) { roll -= w; if (roll <= 0) return v; }
+	return 2;
+}
 
 interface SheetAnim { frames: Texture[]; fps: number; anchorX: number; anchorY: number; bodyFrac?: number }
 
@@ -71,6 +84,23 @@ const PARTICLE: Record<SymbolId, number> = {
 };
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+// ---------- candlestick price-action helpers (ported from the crash game chart) ----------
+const smoothStep = (t: number) => t * t * (3 - 2 * t);
+
+/** The intra-candle tick path: open → high/low (jittered order) → close. */
+function tickPath(o: number, h: number, l: number, c: number, isRug: boolean, rng: () => number): number[] {
+	if (isRug) return [o, o * (0.92 + rng() * 0.06), o * (0.5 + rng() * 0.2), c * (1.2 + rng() * 0.3), c, c];
+	const range = Math.max(h - l, 1);
+	const jit = (v: number, amt: number) => Math.min(h, Math.max(l, v + (rng() - 0.5) * amt));
+	const mid = (a: number, b: number, t: number) => a + (b - a) * t;
+	const lowFirst = c >= o ? rng() < 0.72 : rng() < 0.28;
+	const pts = [o];
+	if (lowFirst) pts.push(jit(mid(o, l, 0.6), range * 0.2), l, jit(mid(l, h, 0.45), range * 0.3), h, jit(mid(h, c, 0.5), range * 0.2));
+	else pts.push(jit(mid(o, h, 0.6), range * 0.2), h, jit(mid(h, l, 0.45), range * 0.3), l, jit(mid(l, c, 0.5), range * 0.2));
+	pts.push(c);
+	return pts;
+}
 
 export class SlotBoard {
 	private app!: Application;
@@ -282,14 +312,20 @@ export class SlotBoard {
 			return c;
 		}
 		if (cell.sym === 'scatter') {
-			if (idleSheet) {
-				const glow = new Graphics();
-				glow.circle(0, 0, 48).fill({ color: GREEN, alpha: 0.12 });
-				c.addChild(glow, this.sheetSprite(idleSheet, 100));
-				c.sheetIdle = true;
-			} else {
-				c.addChild(tex ? this.buildTexScatter(tex) : this.buildScatter());
-			}
+			// the god-candle: a LIVE candlestick that slowly rises then falls in place,
+			// labelled with the multiplier it previews (no "SCATTER" wording)
+			const g = new Graphics();
+			const previewX = pickPreviewX();
+			const label = new Text({
+				text: `${previewX}×`, style: {
+					fontFamily: 'DynaPuff', fontSize: 22, fontWeight: '700', fill: GOLD,
+					stroke: { color: 0x3a2a00, width: 5 },
+				},
+			});
+			label.anchor.set(0.5); label.y = 44;
+			c.addChild(g, label);
+			c.mc = { g, previewX, phase: Math.random() * 2600, osc: 0 };
+			this.drawLiveCandle(c);
 			return c;
 		}
 		if (idleSheet) {
@@ -436,6 +472,37 @@ export class SlotBoard {
 		return c;
 	}
 
+	/** Redraw a god-candle tile: a green candlestick grown to the current oscillation
+	 * (0 = flat at open, 1 = fully up to its preview multiplier), resting on a gold base. */
+	private drawLiveCandle(sp: CellSprite) {
+		const st = sp.mc!;
+		const g = st.g;
+		g.clear();
+		const base = 30;                                   // candle foot (local y)
+		const maxH = 18 + Math.log(st.previewX) * 13;      // full-rise body height ∝ preview
+		const bodyH = Math.max(4, maxH * st.osc);
+		const top = base - bodyH;
+		// aura
+		g.roundRect(-18, top - 8, 36, bodyH + 20, 9).fill({ color: GREEN, alpha: 0.14 });
+		// gold base ring
+		g.ellipse(0, base + 7, 18, 5).fill(GOLD);
+		g.ellipse(0, base + 7, 18, 5).stroke({ width: 2, color: 0xb8860b });
+		// wick + body
+		g.rect(-2, top - 7, 4, 8).fill(GREEN);
+		g.roundRect(-13, top, 26, bodyH, 5).fill(GREEN);
+		g.roundRect(-13, top, 26, bodyH, 5).stroke({ width: 2, color: 0x0f7a38 });
+		g.roundRect(-8, top + 3, 6, Math.max(4, bodyH - 6), 3).fill({ color: 0xffffff, alpha: 0.2 });
+	}
+
+	/** Advance a god-candle tile: slow in-place rise then fall (close climbs toward its
+	 * preview, then eases back), a gentle ~2.6s cosine loop. */
+	private animLiveCandle(sp: CellSprite, dt: number) {
+		const st = sp.mc!;
+		st.phase += dt;
+		st.osc = 0.5 - 0.5 * Math.cos((st.phase / 2600) * Math.PI * 2);
+		this.drawLiveCandle(sp);
+	}
+
 	// ---------- tween/particle core ----------
 	private tween(dur: number, ease: Ease, apply: (v: number) => void): Promise<void> {
 		return new Promise((resolve) => {
@@ -445,12 +512,18 @@ export class SlotBoard {
 
 	private update(dt: number) {
 		this.time += dt;
+		// live scatter candlesticks fluctuate continuously (even mid-spin)
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+			const sp = this.sprites[c][r];
+			if (sp?.mc) this.animLiveCandle(sp, dt);
+		}
 		if (this.idleOn) {
 			// per-symbol idle motion, phase-offset per cell — alive, never lockstep
 			for (let c = 0; c < COLS; c++) {
 				for (let r = 0; r < ROWS; r++) {
 					const sp = this.sprites[c][r];
 					if (!sp) continue;
+					if (sp.mc) continue; // scatter: its own live-candle animation
 					if (sp.gleam) sp.gleam.alpha = Math.max(0, Math.sin(this.time / 650 + sp.idlePhase * 2)) ** 6;
 					if (sp.sheetIdle) continue; // frames carry the motion
 					const idle = IDLE[sp.cellData.sym];
@@ -882,145 +955,228 @@ export class SlotBoard {
 		this.idleOn = false;
 		const ov = this.overlayLayer;
 		const centreX = LW / 2;
-		const baseY = FRAME + BOARD_H - 6;    // candle foot, at the board bottom
-		const topLimit = FRAME + 24;          // highest the candle head can draw
+		const moon = peakX >= 50;
 
 		// darken the board
 		const veil = new Graphics();
-		veil.rect(0, 0, LW, LH).fill({ color: 0x05070c, alpha: 1 });
+		veil.rect(0, 0, LW, LH).fill({ color: 0x090b12, alpha: 1 });
 		veil.alpha = 0;
 		ov.addChild(veil);
 		sfx.scatterLand();
-		await this.tween(260, outCubic, (v) => { veil.alpha = v * 0.86; });
+		await this.tween(240, outCubic, (v) => { veil.alpha = v * 0.94; });
 
 		const title = new Text({
 			text: 'GOD CANDLE', style: {
-				fontFamily: 'DynaPuff', fontSize: 58, fontWeight: '700', fill: GREEN,
-				stroke: { color: 0x05351b, width: 10 },
-			},
-		});
-		title.anchor.set(0.5);
-		title.x = centreX; title.y = FRAME + 60; title.alpha = 0;
-		ov.addChild(title);
-		await this.tween(360, outBack, (v) => { title.scale.set(0.6 + v * 0.4); title.alpha = v; });
-
-		const candle = new Graphics();
-		ov.addChild(candle);
-		const multText = new Text({
-			text: '1.00x', style: {
-				fontFamily: 'DynaPuff', fontSize: 52, fontWeight: '700', fill: 0xffffff,
+				fontFamily: 'DynaPuff', fontSize: 44, fontWeight: '700', fill: GREEN,
 				stroke: { color: 0x05351b, width: 9 },
 			},
 		});
-		multText.anchor.set(0.5);
-		ov.addChild(multText);
+		title.anchor.set(0.5);
+		title.x = centreX; title.y = FRAME + 30; title.alpha = 0;
+		ov.addChild(title);
+		await this.tween(300, outBack, (v) => { title.scale.set(0.6 + v * 0.4); title.alpha = v; });
 
-		const bodyW = 58;
-		// draw helper: body baseY..bodyTopY + wick up to headY, tinted green/red
-		const draw = (headY: number, bodyFrac: number, color: number, glow: number) => {
-			candle.clear();
-			const bodyTopY = baseY - (baseY - headY) * bodyFrac;
-			// glow
-			candle.roundRect(centreX - bodyW / 2 - 10, headY - 10, bodyW + 20, baseY - headY + 20, 14)
-				.fill({ color: glow, alpha: 0.18 });
-			// upper wick
-			candle.rect(centreX - 3, headY, 6, bodyTopY - headY).fill(color);
-			// body
-			candle.roundRect(centreX - bodyW / 2, bodyTopY, bodyW, baseY - bodyTopY, 10).fill(color);
-			candle.roundRect(centreX - bodyW / 2, bodyTopY, bodyW, baseY - bodyTopY, 10).stroke({ width: 3, color: 0x0f7a38 });
-			// gloss
-			candle.roundRect(centreX - bodyW / 2 + 8, bodyTopY + 6, 10, Math.max(8, baseY - bodyTopY - 14), 5)
-				.fill({ color: 0xffffff, alpha: 0.18 });
+		// BOOM: the god candle smashes up through the board, shattering tiles bottom→top
+		sfx.bigWin();
+		this.shake = 320;
+		for (let r = ROWS - 1; r >= 0; r--) { this.shatterRow(r, ov); await sleep(55); }
+
+		// ---- live scrolling candlestick chart (ported from the crash game) ----
+		const gridG = new Graphics(), candleG = new Graphics(), pulseG = new Graphics();
+		ov.addChild(gridG, candleG, pulseG);
+		const bigMult = new Text({
+			text: '1.00x', style: {
+				fontFamily: 'DynaPuff', fontSize: 58, fontWeight: '700', fill: 0xffffff,
+				stroke: { color: 0x05351b, width: 9 },
+			},
+		});
+		bigMult.anchor.set(0.5); bigMult.x = centreX; bigMult.y = FRAME + 34;
+		title.visible = false;
+		const chip = new Text({
+			text: '', style: { fontFamily: 'IBM Plex Mono', fontSize: 13, fontWeight: '600', fill: 0x052012 },
+		});
+		chip.anchor.set(0, 0.5);
+		ov.addChild(bigMult, chip);
+
+		// chart geometry inside the board area
+		const padL = FRAME + 10, right = FRAME + BOARD_W - 66, padT = FRAME + 64, bottom = FRAME + BOARD_H - 10;
+		const iw = right - padL, ih = bottom - padT;
+		const CW = 16, GAP = 7, slot = CW + GAP;
+		const maxVis = Math.floor(iw / slot) - 1;
+
+		const completed: number[][] = [];
+		let live: { open: number; high: number; low: number; price: number } | null = null;
+		let yLo = 0.6, yHi = 2.0;
+
+		const draw = () => {
+			const cur = completed.length;
+			const xLast = padL + iw - CW;
+			const xOf = (i: number) => xLast - (cur - i) * slot;
+			// auto-scale to the visible window
+			let lo = Infinity, hi = -Infinity;
+			for (let i = Math.max(0, cur - maxVis); i < cur; i++) { lo = Math.min(lo, completed[i][2] / 100); hi = Math.max(hi, completed[i][1] / 100); }
+			if (live) { lo = Math.min(lo, live.low / 100); hi = Math.max(hi, live.high / 100); }
+			if (!isFinite(lo)) { lo = 0.85; hi = 1.35; }
+			const pv = (hi - lo) * 0.14 + 0.04; lo = Math.max(0, lo - pv); hi += pv;
+			yLo += (lo - yLo) * 0.2; yHi += (hi - yHi) * 0.2;
+			const yOf = (m: number) => padT + ih - ((m - yLo) / (yHi - yLo)) * ih;
+
+			gridG.clear();
+			const span = yHi - yLo;
+			const step = span > 400 ? 100 : span > 160 ? 50 : span > 60 ? 20 : span > 24 ? 10 : span > 10 ? 5 : span > 4 ? 2 : span > 2 ? 1 : 0.5;
+			for (let m = Math.ceil(yLo / step) * step; m < yHi; m += step) {
+				const yy = yOf(m);
+				gridG.moveTo(padL, yy).lineTo(padL + iw, yy).stroke({ width: 1, color: 0x1b2030 });
+			}
+
+			candleG.clear();
+			const dc = (i: number, o: number, h: number, l: number, c: number) => {
+				const bx = xOf(i); if (bx + CW < padL) return;
+				const col = c >= o ? GREEN : RED, cxp = bx + CW / 2;
+				const yO = yOf(o / 100), yC = yOf(c / 100), yH = yOf(h / 100), yL = yOf(l / 100);
+				const top = Math.min(yO, yC), bh = Math.max(3, Math.abs(yC - yO));
+				candleG.roundRect(bx - 2, top - 2, CW + 4, bh + 4, 4).fill({ color: col, alpha: 0.16 });
+				candleG.moveTo(cxp, yH).lineTo(cxp, yL).stroke({ width: 2.5, color: col, alpha: 0.95 });
+				candleG.roundRect(bx, top, CW, bh, 3).fill(col);
+			};
+			for (let i = 0; i < cur; i++) dc(i, completed[i][0], completed[i][1], completed[i][2], completed[i][3]);
+			if (live) dc(cur, live.open, live.high, live.low, live.price);
+
+			pulseG.clear();
+			const price = live ? live.price : (cur ? completed[cur - 1][3] : 100);
+			const py = yOf(price / 100);
+			for (let px = padL; px < padL + iw + 20; px += 14) pulseG.moveTo(px, py).lineTo(px + 7, py).stroke({ width: 2, color: CYAN, alpha: 0.65 });
+			const dot = 4 + Math.sin(this.time / 140) * 1.6;
+			pulseG.circle(xLast + CW / 2, py, dot + 5).fill({ color: CYAN, alpha: 0.18 });
+			pulseG.circle(xLast + CW / 2, py, dot).fill(CYAN);
+			pulseG.roundRect(padL + iw + 4, py - 12, 80, 24, 7).fill(CYAN);
+			chip.text = `${(price / 100).toFixed(2)}x`; chip.position.set(padL + iw + 12, py);
+
+			const mm = price / 100;
+			bigMult.text = `${mm.toFixed(mm >= 100 ? 0 : 2)}x`;
+			bigMult.style.fontSize = 50 + Math.min(44, Math.log(Math.max(1, mm)) * 9);
+			bigMult.style.fill = live ? 0xffffff : (moon ? GOLD : GREEN);
 		};
 
-		// 1) CHARGE: small candle, open/close fluctuating red/green
-		let chargeHead = baseY - 70;
-		for (let i = 0; i < 26; i++) {
-			const up = Math.random() < 0.52;
-			const h = 50 + Math.random() * 60;
-			draw(baseY - h, 0.5 + Math.random() * 0.3, up ? GREEN : RED, up ? GREEN : RED);
-			multText.text = `${(1 + Math.random() * 0.4).toFixed(2)}x`;
-			multText.x = centreX; multText.y = baseY - h - 40;
-			if (i % 3 === 0) sfx.candleTick();
-			await sleep(42);
+		// generate the price run and play it candle-by-candle
+		const seq = this.genPriceRun(peakX);
+		for (let k = 0; k < seq.length; k++) {
+			const [o, h, l, c] = seq[k];
+			const isRugC = c < o * 0.5;
+			const pts = tickPath(o, h, l, c, isRugC, Math.random);
+			live = { open: o, high: o, low: o, price: o };
+			const formMs = 760;   // match the original crash game's 800ms candle pace
+			let tk = 0;
+			await this.tween(formMs, (t) => t, (v) => {
+				const segs = pts.length - 1, ft = v * segs, si = Math.min(segs - 1, Math.floor(ft));
+				const price = pts[si] + (pts[si + 1] - pts[si]) * smoothStep(ft - si);
+				live!.price = price;
+				live!.high = Math.max(live!.high, price);
+				live!.low = Math.min(live!.low, price);
+				draw();
+				if (performance.now() - tk > 50) { sfx.candleTick(); tk = performance.now(); }
+			});
+			completed.push([o, h, l, c]);
+			live = null;
+			draw();
+			if (isRugC) { this.shake = 360; sfx.rug?.(); }
+			else sfx.candle?.(c >= o);
 		}
 
-		// 2) BOOM: climb to the peak, candle grows (log height), breaking rows above
-		sfx.bigWin();
-		this.shake = 260;
-		const maxH = baseY - topLimit;
-		const hAt = (m: number) => Math.min(maxH, (Math.log(m) / Math.log(1000)) * maxH * 1.15);
-		const rowCY = (r: number) => FRAME + r * CELL + CELL / 2;
-		const brokenRows = new Set<number>();
-		const climbMs = 2600 + Math.min(1400, Math.log(peakX) * 320);
-		let lastTick = 0;
-		await this.tween(climbMs, (x) => 1 - Math.pow(1 - x, 2.4), (v) => {
-			// fluctuating climb: eased base × small jitter, biased up
-			const base = 1 + (peakX - 1) * v;
-			const jitter = 1 + Math.sin(v * 46) * 0.05 * (1 - v) + (Math.random() - 0.5) * 0.015;
-			const m = Math.max(1, base * jitter);
-			const headY = baseY - hAt(m);
-			draw(headY, 0.72, GREEN, GREEN);
-			multText.text = `${m.toFixed(2)}x`;
-			multText.x = centreX;
-			multText.y = Math.max(topLimit + 6, headY - 40);
-			multText.style.fontSize = 52 + Math.min(44, Math.log(m) * 10);
-			// shatter any row the candle head has now risen past
-			for (let r = ROWS - 1; r >= 0; r--) {
-				if (!brokenRows.has(r) && headY <= rowCY(r)) {
-					brokenRows.add(r);
-					this.shatterRow(r, ov);
-					this.shake = Math.max(this.shake, 200);
-				}
-			}
-			if (performance.now() - lastTick > 55) { sfx.candleTick(); sfx.rollTick(); lastTick = performance.now(); }
-		});
-
-		// 3) SETTLE: lock the peak, crown flash
-		const moon = peakX >= 50;
-		draw(baseY - hAt(peakX), 0.74, GREEN, moon ? GOLD : GREEN);
-		multText.text = `${peakX.toFixed(2)}x`;
-		multText.style.fill = moon ? GOLD : 0xffffff;
-		this.shake = 320;
-		this.burst(centreX, multText.y, moon ? GOLD : GREEN, 26, ov);
-		for (let i = 0; i < 18; i++) setTimeout(() => this.burst(Math.random() * LW, topLimit + 40, i % 2 ? GOLD : GREEN, 3, ov), i * 55);
+		// SETTLE: crown the peak
+		this.shake = 300;
+		const peakY = FRAME + 34;
+		this.burst(centreX, peakY, moon ? GOLD : GREEN, 26, ov);
+		for (let i = 0; i < 20; i++) setTimeout(() => this.burst(Math.random() * LW, FRAME + 80, i % 2 ? GOLD : GREEN, 3, ov), i * 50);
 		sfx.win();
 
 		const tag = new Text({
 			text: moon ? 'MOON!' : 'JACKPOT', style: {
-				fontFamily: 'DynaPuff', fontSize: 46, fontWeight: '700', fill: moon ? GOLD : GREEN,
-				stroke: { color: 0x05351b, width: 9 },
+				fontFamily: 'DynaPuff', fontSize: 40, fontWeight: '700', fill: moon ? GOLD : GREEN,
+				stroke: { color: 0x05351b, width: 8 },
 			},
 		});
-		tag.anchor.set(0.5); tag.x = centreX; tag.y = FRAME + 60; tag.scale.set(0);
-		title.visible = false;
+		tag.anchor.set(0.5); tag.x = centreX; tag.y = FRAME + BOARD_H / 2 - 28; tag.scale.set(0);
 		ov.addChild(tag);
-		await this.tween(420, outBack, (v) => tag.scale.set(v));
+		await this.tween(400, outBack, (v) => tag.scale.set(v));
 
 		const winMicro = Math.round(betMicro * peakX);
 		const payout = new Text({
 			text: fmtMoney(winMicro), style: {
-				fontFamily: 'DynaPuff', fontSize: 40, fontWeight: '700', fill: 0xffffff,
-				stroke: { color: 0x05351b, width: 8 },
+				fontFamily: 'DynaPuff', fontSize: 52, fontWeight: '700', fill: 0xffffff,
+				stroke: { color: 0x05351b, width: 9 },
 			},
 		});
-		payout.anchor.set(0.5); payout.x = centreX; payout.y = LH - METER_H; payout.alpha = 0;
+		payout.anchor.set(0.5); payout.x = centreX; payout.y = FRAME + BOARD_H / 2 + 28; payout.alpha = 0;
 		ov.addChild(payout);
-		await this.tween(500, outCubic, (v) => { payout.alpha = v; payout.text = fmtMoney(Math.round(winMicro * v)); });
-		await sleep(1500);
+		await this.tween(520, outCubic, (v) => { payout.alpha = v; payout.text = fmtMoney(Math.round(winMicro * v)); });
+		await sleep(1700);
 
-		await this.tween(300, inCubic, (v) => {
-			veil.alpha = 0.86 * (1 - v); candle.alpha = 1 - v; multText.alpha = 1 - v;
-			tag.alpha = 1 - v; payout.alpha = 1 - v;
-		});
-		veil.destroy(); candle.destroy(); multText.destroy(); tag.destroy(); payout.destroy(); title.destroy();
-		// board is spent (tiles shattered) — caller refills on the next spin
+		const parts: { alpha: number }[] = [veil, title, bigMult, chip, gridG, candleG, pulseG, tag, payout];
+		await this.tween(320, inCubic, (v) => { for (const p of parts) p.alpha = (p === veil ? 0.94 : 1) * (1 - v); });
+		veil.destroy(); title.destroy(); bigMult.destroy(); chip.destroy();
+		gridG.destroy(); candleG.destroy(); pulseG.destroy(); tag.destroy(); payout.destroy();
 		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
 			const s = this.sprites[c][r];
 			if (s) { s.destroy(); this.sprites[c][r] = null; }
 		}
 		this.firstSpin = true;
 		return winMicro;
+	}
+
+	/** Build a REALISTIC OHLC price run (hundredths of 1.00x) to peakX. Each candle
+	 * carries a chop return sampled from the crash game's weighted distribution
+	 * (mostly small red/green moves — the sideways grind) plus a drift that is tiny
+	 * early and large late, so the chart meanders, then BOOMS with big green candles
+	 * into the peak. Non-moon runs end on a red rug candle; the peak is still banked. */
+	private genPriceRun(peakX: number): number[][] {
+		const target = Math.round(peakX * 100);
+		const moon = peakX >= 50;
+		// fewer candles now that each forms slowly (~760ms) so the run stays ~10-13s
+		const n = Math.min(16, Math.max(11, Math.round(10 + Math.log(peakX) * 2)));
+
+		// realistic chop: per-candle multiplier weighted like ambient.ts CANDLE_OUTCOMES,
+		// trimmed to the non-rug range (roughly balanced so it grinds sideways, not down).
+		const CHOP: [number, number][] = [
+			[0.82, 150], [0.90, 150], [0.96, 120], [1.00, 110],
+			[1.06, 120], [1.12, 120], [1.20, 70], [1.35, 24],
+		];
+		const chopTot = CHOP.reduce((s, [, w]) => s + w, 0);
+		const sampleChop = () => {
+			let roll = Math.random() * chopTot;
+			for (const [r, w] of CHOP) { roll -= w; if (roll <= 0) return Math.log(r); }
+			return 0;
+		};
+
+		// chop is strong during the grind, damped during the boom so big green dominates
+		const chops: number[] = [];
+		for (let i = 0; i < n; i++) chops.push(sampleChop() * (i < n * 0.62 ? 1 : 0.35));
+		const sumChop = chops.reduce((a, b) => a + b, 0);
+
+		// boom weights: the climb is back-loaded (p^2.8) → flat start, explosive finish
+		const bw = (i: number) => Math.pow(i / (n - 1), 2.8);
+		let sumBW = 0; for (let i = 0; i < n; i++) sumBW += bw(i);
+		const drift = Math.log(target / 100) - sumChop;   // remaining lift to distribute
+
+		const candles: number[][] = [];
+		let price = 100;
+		for (let i = 0; i < n; i++) {
+			const open = price;
+			const logRet = chops[i] + drift * (bw(i) / sumBW);
+			let close = Math.round(open * Math.exp(logRet));
+			close = Math.max(55, close);                  // allow dips, never to zero
+			const spread = Math.max(2, Math.abs(close - open));
+			const high = Math.max(open, close) + Math.round(spread * Math.random() * 0.5);
+			const low = Math.max(40, Math.min(open, close) - Math.round(spread * Math.random() * 0.4));
+			candles.push([open, high, low, close]);
+			price = close;
+		}
+		// land the peak exactly on target (the banked jackpot)
+		const last = candles[candles.length - 1];
+		last[3] = target; last[1] = Math.max(last[1], target);
+		// non-moon drama: a red rug candle dumping back down after the peak
+		if (!moon) candles.push([target, Math.round(target * 1.01), 108, 114]);
+		return candles;
 	}
 
 	private shatterRow(r: number, layer: Container) {

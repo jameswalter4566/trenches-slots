@@ -125,7 +125,8 @@ export function godCandlePeak(): number {
 	return Math.round(peak * 100) / 100;
 }
 
-/** Cosmetic resting grid shown before the first spin — no scatters/orbs, no money. */
+/** Cosmetic resting grid shown before the first spin: pays symbols + 1-2 live
+ * god-candle scatters so the fluctuating candle is visible on the board. No orbs. */
 export function displayGrid(): Cell[][] {
 	const grid: Cell[][] = [];
 	for (let c = 0; c < COLS; c++) {
@@ -136,6 +137,10 @@ export function displayGrid(): Cell[][] {
 			grid[c][r] = cell;
 		}
 	}
+	// sprinkle 1-2 scatters on distinct columns so the live candle shows at rest
+	const n = 1 + (Math.random() < 0.5 ? 1 : 0);
+	const cols = [0, 1, 2, 3, 4, 5].sort(() => Math.random() - 0.5).slice(0, n);
+	for (const c of cols) grid[c][Math.floor(Math.random() * ROWS)] = { sym: 'scatter' };
 	return grid;
 }
 
