@@ -44,19 +44,16 @@ export const FS_RETRIGGER_SPINS = 5;
 export const BONUS_BUY_COST = 100; // × bet
 
 // Per-cell draw weights for the prototype sim.
+// DEMO SET: only the fully-animated tiles land — bull + rocket (pays), the god
+// candle (scatter/jackpot) and the multiplier orb. Placeholder-art symbols
+// (whale/frog/diamond/moon/coins) are commented out until their packs arrive.
 export const WEIGHTS: [SymbolId, number][] = [
-	['coinT', 180],
-	['coinB', 160],
-	['coinP', 140],
-	['coinG', 120],
-	['moon', 80],
-	['diamond', 70],
-	['frog', 60],
-	['whale', 50],
-	['rocket', 40],
-	['bull', 30],
-	['scatter', 20],
+	['rocket', 55],
+	['bull', 55],
+	['scatter', 22],
 	['orb', 14],
+	// ['coinT', 180], ['coinB', 160], ['coinP', 140], ['coinG', 120],
+	// ['moon', 80], ['diamond', 70], ['frog', 60], ['whale', 50],
 ];
 
 // Orb multiplier values and weights (sum applied to the tumble-sequence win).
