@@ -484,6 +484,15 @@ export class SlotBoard {
 	private cy(row: number) { return row * CELL + CELL / 2; }
 
 	// ---------- choreography ----------
+	/** Fill the board with a resting grid on load — a slot never shows an empty cabinet. */
+	async primeIdle(grid: Cell[][]) {
+		const newCells: { col: number; row: number; cell: Cell }[] = [];
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) newCells.push({ col: c, row: r, cell: grid[c][r] });
+		await this.dropCells({ grid, newCells, wins: [], orbs: [], stepWinMicro: 0 }, true);
+		this.firstSpin = false;
+		this.idleOn = true;
+	}
+
 	async replaySpin(result: SpinResult): Promise<void> {
 		this.idleOn = false;
 		this.setMeterIdle();

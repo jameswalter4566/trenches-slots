@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { SlotBoard } from './lib/board';
-	import { spin, type SpinResult } from './lib/sim';
+	import { displayGrid, spin, type SpinResult } from './lib/sim';
 	import { fmtMoney } from './lib/session';
 	import { sfx } from './lib/sound';
 	import { BONUS_BUY_COST, FREE_SPINS_AWARD, FS_RETRIGGER_SPINS } from './lib/paytable';
@@ -36,6 +36,7 @@
 		await document.fonts.load('700 20px DynaPuff');
 		board = new SlotBoard();
 		await board.init(boardEl);
+		await board.primeIdle(displayGrid());
 		const onKey = (e: KeyboardEvent) => {
 			if (e.code === 'Space') {
 				e.preventDefault();

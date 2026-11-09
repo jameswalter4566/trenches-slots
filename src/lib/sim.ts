@@ -116,6 +116,20 @@ function collectOrbs(cells: NewCell[]): OrbCell[] {
 		.map((n) => ({ col: n.col, row: n.row, value: n.cell.orb! }));
 }
 
+/** Cosmetic resting grid shown before the first spin — no scatters/orbs, no money. */
+export function displayGrid(): Cell[][] {
+	const grid: Cell[][] = [];
+	for (let c = 0; c < COLS; c++) {
+		grid[c] = [];
+		for (let r = 0; r < ROWS; r++) {
+			let cell = drawSymbol(true);
+			while (cell.sym === 'orb') cell = drawSymbol(true);
+			grid[c][r] = cell;
+		}
+	}
+	return grid;
+}
+
 export interface SpinOptions {
 	/** Force a bonus-triggering grid (bonus buy). */
 	forceBonus?: boolean;
