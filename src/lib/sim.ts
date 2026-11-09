@@ -5,7 +5,7 @@
 // SpinResult shape is designed to match what those books will contain.
 
 import {
-	COLS, ROWS, PAYS, WEIGHTS, ORB_VALUES, SCATTER_PAY, BEAR_FACTOR_PER, payTier,
+	COLS, ROWS, PAYS, WEIGHTS, ORB_VALUES, SCATTER_PAY, BEAR_FACTOR_PER, MONEYGUN_PRIZES, payTier,
 	type Cell, type SymbolId, type PayingSymbol,
 } from './paytable';
 
@@ -53,7 +53,9 @@ export interface SpinResult {
 	grossWinMicro: number;    // tumble×mult + scatter, BEFORE the bear penalty
 	bearCount: number;        // bears on the settled grid (each halves the win)
 	bearFactor: number;       // 0.5^bearCount applied to the gross win
-	totalWinMicro: number;    // net paid = round(gross × bearFactor)
+	moneygunPrizes: number[]; // per money-gun cash prize (micro), sprayed on top
+	moneygunWinMicro: number; // sum of the money-gun prizes (bear can't touch it)
+	totalWinMicro: number;    // net = round(gross × bearFactor) + moneygun
 	triggersFreeSpins: boolean;
 	retrigger: boolean;
 }
@@ -89,7 +91,7 @@ function detectWins(grid: Cell[][], betMicro: number): WinGroup[] {
 	for (let c = 0; c < COLS; c++) {
 		for (let r = 0; r < ROWS; r++) {
 			const sym = grid[c][r].sym;
-			if (sym === 'scatter' || sym === 'orb' || sym === 'bear') continue;
+			if (sym === 'scatter' || sym === 'orb' || sym === 'bear' || sym === 'moneygun') continue;
 			const list = bySym.get(sym as PayingSymbol) ?? [];
 			list.push([c, r]);
 			bySym.set(sym as PayingSymbol, list);
@@ -117,6 +119,21 @@ function countBears(grid: Cell[][]): number {
 	let n = 0;
 	for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) if (grid[c][r].sym === 'bear') n++;
 	return n;
+}
+
+const MONEYGUN_TOT = MONEYGUN_PRIZES.reduce((a, [, w]) => a + w, 0);
+function drawMoneygunPrize(): number {
+	let roll = Math.random() * MONEYGUN_TOT;
+	for (const [v, w] of MONEYGUN_PRIZES) { roll -= w; if (roll <= 0) return v; }
+	return 2;
+}
+/** Each money gun on the grid sprays a cash prize (× bet). Returns per-gun values. */
+function moneygunPrizes(grid: Cell[][], betMicro: number): number[] {
+	const out: number[] = [];
+	for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+		if (grid[c][r].sym === 'moneygun') out.push(Math.round(betMicro * drawMoneygunPrize()));
+	}
+	return out;
 }
 
 function collectOrbs(cells: NewCell[]): OrbCell[] {
@@ -247,7 +264,11 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 	const grossWin = tumbleWin + scatterWin;
 	const bearCount = countBears(grid);
 	const bearFactor = bearCount > 0 ? Math.pow(BEAR_FACTOR_PER, bearCount) : 1;
-	const netWin = bearCount > 0 ? Math.round(grossWin * bearFactor) : grossWin;
+	const netPayWin = bearCount > 0 ? Math.round(grossWin * bearFactor) : grossWin;
+
+	// MONEY GUN: each gun sprays a cash prize on top (not touched by the bear).
+	const gunPrizes = moneygunPrizes(grid, betMicro);
+	const moneygunWin = gunPrizes.reduce((a, b) => a + b, 0);
 
 	return {
 		betMicro,
@@ -260,7 +281,9 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 		grossWinMicro: grossWin,
 		bearCount,
 		bearFactor,
-		totalWinMicro: netWin,
+		moneygunPrizes: gunPrizes,
+		moneygunWinMicro: moneygunWin,
+		totalWinMicro: netPayWin + moneygunWin,
 		triggersFreeSpins: !opts.freeSpin && scatterCount >= 4,
 		retrigger: !!opts.freeSpin && scatterCount >= 3,
 	};

@@ -56,7 +56,7 @@ function pickPreviewX(): number {
 interface SheetAnim { frames: Texture[]; fps: number; anchorX: number; anchorY: number; bodyFrac?: number }
 
 const SYMBOL_IDS: SymbolId[] = [
-	'bull', 'bear', 'rocket', 'whale', 'frog', 'diamond', 'moon',
+	'bull', 'bear', 'moneygun', 'rocket', 'whale', 'frog', 'diamond', 'moon',
 	'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
 ];
 
@@ -64,6 +64,7 @@ const SYMBOL_IDS: SymbolId[] = [
 const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs?: number; pulse?: number; pulseMs?: number }> = {
 	bull:    { bob: 2.0, bobMs: 700, pulse: 0.015, pulseMs: 900 }, // fallback if no idle sheet
 	bear:    { bob: 1.6, bobMs: 820, pulse: 0.015, pulseMs: 1000 }, // fallback if no idle sheet
+	moneygun:{ bob: 3.0, bobMs: 500, rot: 0.04, rotMs: 640 },    // fallback if no idle sheet
 	rocket:  { bob: 3.6, bobMs: 420, rot: 0.03, rotMs: 560 },   // gently hovers
 	whale:   { bob: 3.0, bobMs: 820, rot: 0.05, rotMs: 980 },   // floats
 	frog:    { bob: 2.2, bobMs: 620, pulse: 0.02, pulseMs: 500 },
@@ -80,7 +81,7 @@ const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs
 const GLEAM = new Set<SymbolId>(['diamond', 'coinT']);
 
 const PARTICLE: Record<SymbolId, number> = {
-	bull: 0xffa24d, bear: 0xf0414d,
+	bull: 0xffa24d, bear: 0xf0414d, moneygun: 0x3bd45f,
 	rocket: 0xff9a3d, whale: 0x5aa2ff, frog: 0x3bd45f, diamond: 0xcfeaff,
 	moon: 0xf7c843, coinG: 0xf7c843, coinP: 0xb479ff, coinB: 0x5aa2ff,
 	coinT: 0x3ee6c2, scatter: 0x2be26a, orb: 0xf7c843,
@@ -114,6 +115,7 @@ export class SlotBoard {
 	private sprites: (CellSprite | null)[][] = [];
 	private tweens: Tween[] = [];
 	private particles: { g: Graphics; vx: number; vy: number; life: number; max: number }[] = [];
+	private bills: { g: Graphics; vx: number; vy: number; vr: number; sway: number; swayPh: number; life: number }[] = [];
 	private meterText!: Text;
 	private meterPlaque!: Graphics;
 	private multBadge!: Text;
@@ -560,6 +562,16 @@ export class SlotBoard {
 				this.particles.splice(i, 1);
 			}
 		}
+		// money rain: banknotes flutter down from the top across the whole screen
+		for (let i = this.bills.length - 1; i >= 0; i--) {
+			const b = this.bills[i];
+			b.life += dt;
+			b.vy = Math.min(360, b.vy + (260 * dt) / 1000);           // gentle gravity, terminal flutter
+			b.g.x += ((b.vx + Math.sin(b.life / 170 + b.swayPh) * b.sway) * dt) / 1000;
+			b.g.y += (b.vy * dt) / 1000;
+			b.g.rotation += (b.vr * dt) / 1000;
+			if (b.g.y > LH + 50) { b.g.destroy(); this.bills.splice(i, 1); }
+		}
 		if (this.shake > 0) {
 			this.shake = Math.max(0, this.shake - dt);
 			const a = (this.shake / 320) * 9;
@@ -638,6 +650,10 @@ export class SlotBoard {
 		if (result.bearCount > 0 && result.grossWinMicro > 0) {
 			await this.bearRoar(result);
 		}
+		// MONEY GUN: guns fire, cash rains down, screen shakes, prize added to the win
+		if (result.moneygunPrizes.length > 0) {
+			await this.moneyGunFire(result);
+		}
 
 		const betX = result.totalWinMicro / result.betMicro;
 		if (betX >= 25) await this.bigWinOverlay(result.totalWinMicro, betX);
@@ -675,21 +691,24 @@ export class SlotBoard {
 			const sp = this.sprites[c][r];
 			if (sp?.cellData.sym !== 'bear') continue;
 			this.burst(sp.x + FRAME, sp.y + FRAME, RED, 10, ov);
-			if (roar) jobs.push(this.playRoarAt(sp, roar));
+			if (roar) jobs.push(this.playSheetAt(sp, roar));
 		}
 		await this.tween(220, outCubic, (v) => { veil.alpha = v * 0.34; });
 		await this.tween(360, outBack, (v) => banner.scale.set(v));
 		await Promise.all(jobs);
 
-		// crush the win: meter rolls DOWN from gross to the bear-reduced net
-		await this.rollupAsync(result.totalWinMicro, 560);
+		// crush the win: meter rolls DOWN from gross to the bear-reduced pay win
+		// (the money-gun prize is sprayed separately, afterwards, and bears can't touch it)
+		const netPay = result.totalWinMicro - result.moneygunWinMicro;
+		await this.rollupAsync(netPay, 560);
 		await sleep(650);
 		await this.tween(300, inCubic, (v) => { veil.alpha = 0.34 * (1 - v); banner.alpha = 1 - v; });
 		veil.destroy(); banner.destroy();
 	}
 
-	/** Play the bear roar sheet once over a bear cell (body-pinned, soft-fade like a win). */
-	private async playRoarAt(sp: CellSprite, sheet: SheetAnim): Promise<void> {
+	/** Play a one-shot sheet once over a cell (body-pinned, soft-fade like a win).
+	 * Used for the bear roar and the money-gun fire. */
+	private async playSheetAt(sp: CellSprite, sheet: SheetAnim): Promise<void> {
 		const a = new AnimatedSprite(sheet.frames);
 		a.anchor.set(sheet.anchorX, sheet.anchorY);
 		a.x = sp.x; a.y = sp.y;
@@ -706,6 +725,69 @@ export class SlotBoard {
 		await new Promise<void>((resolve) => { a.onComplete = () => resolve(); a.play(); });
 		a.mask = null; m.destroy(); a.destroy();
 		sp.visible = true;
+	}
+
+	/** Drop one banknote from the top of the screen (money rain). */
+	private spawnBill() {
+		const g = new Graphics();
+		const w = 20 + Math.random() * 10, h = w * 0.5;
+		g.roundRect(-w / 2, -h / 2, w, h, 3).fill(0x1f8f3e);
+		g.roundRect(-w / 2, -h / 2, w, h, 3).stroke({ width: 1.5, color: 0x8ff0a8, alpha: 0.8 });
+		g.circle(0, 0, h * 0.28).fill({ color: 0xbff7cb, alpha: 0.85 });
+		g.x = Math.random() * LW;
+		g.y = -30;
+		g.rotation = Math.random() * Math.PI;
+		this.overlayLayer.addChild(g);
+		this.bills.push({
+			g, vx: (Math.random() - 0.5) * 60, vy: 40 + Math.random() * 80,
+			vr: (Math.random() - 0.5) * 4, sway: 30 + Math.random() * 60,
+			swayPh: Math.random() * 6.28, life: 0,
+		});
+	}
+
+	/** MONEY GUN: each gun fires, cash rains across the whole screen, the screen
+	 * shakes, and the sprayed prize is added to the win meter. */
+	private async moneyGunFire(result: SpinResult): Promise<void> {
+		const ov = this.overlayLayer;
+		const fire = this.anims.get('moneygun_win');
+		sfx.bigWin();
+
+		const banner = new Text({
+			text: 'MONEY GUN', style: {
+				fontFamily: 'DynaPuff', fontSize: 40, fontWeight: '700', fill: GREEN,
+				stroke: { color: 0x05351b, width: 9 },
+			},
+		});
+		banner.anchor.set(0.5); banner.x = LW / 2; banner.y = FRAME + 40; banner.scale.set(0);
+		ov.addChild(banner);
+
+		// fire every money gun on the board (+ a cash burst from its muzzle)
+		const jobs: Promise<void>[] = [];
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+			const sp = this.sprites[c][r];
+			if (sp?.cellData.sym !== 'moneygun') continue;
+			this.burst(sp.x + FRAME, sp.y + FRAME, GREEN, 10, ov);
+			if (fire) jobs.push(this.playSheetAt(sp, fire));
+		}
+		await this.tween(320, outBack, (v) => banner.scale.set(v));
+
+		// screen-wide money rain + sustained shake for ~1.4s
+		const rainMs = 1500;
+		let elapsed = 0, acc = 0;
+		await this.tween(rainMs, (t) => t, (v) => {
+			elapsed = v * rainMs;
+			this.shake = Math.max(this.shake, 120);          // keep it rumbling
+			acc += 1;
+			if (acc >= 2) { acc = 0; this.spawnBill(); this.spawnBill(); }
+		});
+		await Promise.all(jobs);
+		void elapsed;
+
+		// roll the money prize onto the meter
+		await this.rollupAsync(result.totalWinMicro, 620);
+		await sleep(700);
+		await this.tween(280, inCubic, (v) => { banner.alpha = 1 - v; });
+		banner.destroy();
 	}
 
 	private async dropOutAll() {

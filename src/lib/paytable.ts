@@ -11,17 +11,23 @@ export type SymbolId =
 	| 'coinG' | 'coinP' | 'coinB' | 'coinT'                 // low pays (coins)
 	| 'scatter'                                             // GOD CANDLE scatter
 	| 'orb'                                                 // multiplier orb
-	| 'bear';                                               // BEAR MARKET — dumps the win
+	| 'bear'                                                // BEAR MARKET — dumps the win
+	| 'moneygun';                                           // MONEY GUN — sprays a cash prize
 
 export interface Cell {
 	sym: SymbolId;
 	orb?: number; // multiplier value when sym === 'orb'
 }
 
-export type PayingSymbol = Exclude<SymbolId, 'scatter' | 'orb' | 'bear'>;
+export type PayingSymbol = Exclude<SymbolId, 'scatter' | 'orb' | 'bear' | 'moneygun'>;
 
 // Each bear on the settled grid halves the spin win (bull pumps, bear dumps).
 export const BEAR_FACTOR_PER = 0.5;
+
+// Each money gun sprays a cash prize (× bet). Weighted toward small, rare big.
+export const MONEYGUN_PRIZES: [number, number][] = [
+	[2, 160], [3, 130], [5, 100], [8, 70], [12, 45], [20, 24], [35, 12], [75, 5], [150, 2],
+];
 
 // Pays as multiples of total bet for counts [8-9, 10-11, 12+] anywhere on the grid.
 export const PAYS: Record<PayingSymbol, [number, number, number]> = {
@@ -55,6 +61,7 @@ export const WEIGHTS: [SymbolId, number][] = [
 	['rocket', 55],
 	['bull', 55],
 	['bear', 26],
+	['moneygun', 20],
 	['scatter', 22],
 	['orb', 14],
 	// ['coinT', 180], ['coinB', 160], ['coinP', 140], ['coinG', 120],
@@ -83,6 +90,7 @@ export const SYMBOL_META: Record<SymbolId, { glyph: string; tile: number; edge: 
 	scatter: { glyph: '',          tile: 0x113322, edge: 0x0a2015, label: 'GOD CANDLE' },
 	orb:     { glyph: '',          tile: 0x3d3414, edge: 0x27210c, label: 'ORB' },
 	bear:    { glyph: '\u{1F43B}', tile: 0x4a1d1d, edge: 0x301212, label: 'BEAR' },
+	moneygun:{ glyph: '\u{1F4B5}', tile: 0x16401f, edge: 0x0c2814, label: 'MONEY GUN' },
 };
 
 export const COIN_COLORS: Record<string, { face: number; rim: number; glyph: number }> = {

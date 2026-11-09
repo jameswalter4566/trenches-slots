@@ -5,7 +5,7 @@
 import { AnimatedSprite, Application, Assets, Container, Rectangle, Sprite, Texture } from 'pixi.js';
 
 const SYMBOLS = [
-	'bull', 'bear', 'rocket', 'whale', 'frog', 'diamond', 'moon',
+	'bull', 'bear', 'moneygun', 'rocket', 'whale', 'frog', 'diamond', 'moon',
 	'coinG', 'coinP', 'coinB', 'coinT', 'scatter', 'orb',
 ];
 const KINDS = ['win', 'idle'] as const;

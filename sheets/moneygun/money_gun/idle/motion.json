@@ -1,0 +1,250 @@
+{
+  "fps": 24,
+  "durationMs": 1125,
+  "loop": true,
+  "frames": [
+    {
+      "frame": 1,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "xOffset": 0.0,
+      "yOffset": 0.0,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 2,
+      "angleDegrees": 0.1614311095197081,
+      "scale": 1.0013836952244546,
+      "xOffset": 0.0,
+      "yOffset": 0.4151085673363923,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 3,
+      "angleDegrees": 0.3141594261403235,
+      "scale": 1.0026927950812028,
+      "xOffset": 0.0,
+      "yOffset": 0.8078385243608319,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 4,
+      "angleDegrees": 0.4499513267805774,
+      "scale": 1.0038567256581192,
+      "xOffset": 0.0,
+      "yOffset": 1.1570176974357707,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 5,
+      "angleDegrees": 0.5614862349285306,
+      "scale": 1.0048127391565302,
+      "xOffset": 0.0,
+      "yOffset": 1.4438217469590788,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 6,
+      "angleDegrees": 0.6427512748161918,
+      "scale": 1.0055092966412817,
+      "xOffset": 0.0,
+      "yOffset": 1.6527889923844932,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 7,
+      "angleDegrees": 0.6893654271085455,
+      "scale": 1.0059088465180732,
+      "xOffset": 0.0,
+      "yOffset": 1.7726539554219745,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 8,
+      "angleDegrees": 0.6988157107898877,
+      "scale": 1.0059898489496275,
+      "xOffset": 0.0,
+      "yOffset": 1.7969546848882827,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 9,
+      "angleDegrees": 0.6705926586208422,
+      "scale": 1.0057479370738929,
+      "xOffset": 0.0,
+      "yOffset": 1.72438112216788,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 10,
+      "angleDegrees": 0.6062177826491071,
+      "scale": 1.0051961524227067,
+      "xOffset": 0.0,
+      "yOffset": 1.5588457268119897,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 11,
+      "angleDegrees": 0.5091615491011342,
+      "scale": 1.0043642418494383,
+      "xOffset": 0.0,
+      "yOffset": 1.3092725548314879,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 12,
+      "angleDegrees": 0.38465628464956436,
+      "scale": 1.003297053868425,
+      "xOffset": 0.0,
+      "yOffset": 0.9891161605274512,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 13,
+      "angleDegrees": 0.2394141003279682,
+      "scale": 1.002052120859954,
+      "xOffset": 0.0,
+      "yOffset": 0.615636257986204,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 14,
+      "angleDegrees": 0.08126503988766094,
+      "scale": 1.0006965574847513,
+      "xOffset": 0.0,
+      "yOffset": 0.20896724542541387,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 15,
+      "angleDegrees": -0.08126503988766108,
+      "scale": 0.9993034425152486,
+      "xOffset": 0.0,
+      "yOffset": -0.20896724542541423,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 16,
+      "angleDegrees": -0.23941410032796773,
+      "scale": 0.997947879140046,
+      "xOffset": 0.0,
+      "yOffset": -0.6156362579862028,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 17,
+      "angleDegrees": -0.3846562846495642,
+      "scale": 0.9967029461315752,
+      "xOffset": 0.0,
+      "yOffset": -0.9891161605274509,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 18,
+      "angleDegrees": -0.509161549101134,
+      "scale": 0.9956357581505617,
+      "xOffset": 0.0,
+      "yOffset": -1.3092725548314876,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 19,
+      "angleDegrees": -0.6062177826491069,
+      "scale": 0.9948038475772933,
+      "xOffset": 0.0,
+      "yOffset": -1.558845726811989,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 20,
+      "angleDegrees": -0.6705926586208422,
+      "scale": 0.994252062926107,
+      "xOffset": 0.0,
+      "yOffset": -1.7243811221678798,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 21,
+      "angleDegrees": -0.6988157107898877,
+      "scale": 0.9940101510503724,
+      "xOffset": 0.0,
+      "yOffset": -1.7969546848882827,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 22,
+      "angleDegrees": -0.6893654271085455,
+      "scale": 0.9940911534819268,
+      "xOffset": 0.0,
+      "yOffset": -1.7726539554219745,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 23,
+      "angleDegrees": -0.6427512748161919,
+      "scale": 0.9944907033587184,
+      "xOffset": 0.0,
+      "yOffset": -1.6527889923844934,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 24,
+      "angleDegrees": -0.5614862349285308,
+      "scale": 0.9951872608434698,
+      "xOffset": 0.0,
+      "yOffset": -1.443821746959079,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 25,
+      "angleDegrees": -0.4499513267805777,
+      "scale": 0.9961432743418808,
+      "xOffset": 0.0,
+      "yOffset": -1.1570176974357713,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 26,
+      "angleDegrees": -0.3141594261403237,
+      "scale": 0.9973072049187972,
+      "xOffset": 0.0,
+      "yOffset": -0.8078385243608324,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    },
+    {
+      "frame": 27,
+      "angleDegrees": -0.1614311095197077,
+      "scale": 0.9986163047755454,
+      "xOffset": 0.0,
+      "yOffset": -0.41510856733639123,
+      "opacity": 1.0,
+      "visibleBanknotes": []
+    }
+  ]
+}
