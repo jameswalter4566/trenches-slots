@@ -51,6 +51,30 @@ def _body_stats(frame: Image.Image):
     return (sx / sw, sy / sw), count
 
 
+def _body_box(frame: Image.Image):
+    """Bounding box of the symbol's saturated body (excludes flame/smoke)."""
+    px = frame.load()
+    w, h = frame.size
+    minx = miny = 10 ** 9
+    maxx = maxy = -1
+    step = 2 if w * h > 40000 else 1
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            r, g, b, a = px[x, y]
+            if a < 150:
+                continue
+            mx, mn = max(r, g, b), min(r, g, b)
+            if mx - mn < 55 or mx < 110:
+                continue
+            if r > 150 and g > 110 and b < 120:
+                continue
+            minx, miny = min(minx, x), min(miny, y)
+            maxx, maxy = max(maxx, x), max(maxy, y)
+    if maxx < 0:
+        return None
+    return (minx, miny, maxx, maxy)
+
+
 def _kill_dark_haze(im: Image.Image, lum_max: int, alpha_max: int) -> None:
     """Clear dim + semi-transparent pixels (baked dark halo); keep bright art."""
     px = im.load()
@@ -152,6 +176,9 @@ def main() -> None:
     rows = int(sys.argv[4]) if len(sys.argv) > 4 else 3
     cols = int(sys.argv[5]) if len(sys.argv) > 5 else 3
     fps = int(sys.argv[6]) if len(sys.argv) > 6 else 14
+    # 7th arg: "full" keeps every frame (play the complete launch-and-exit);
+    # default "trim" drops the fly-away tail so the symbol stays in its tile.
+    do_trim = (sys.argv[7].lower() != "full") if len(sys.argv) > 7 else True
 
     cells = []
     aligned = False  # folder of pre-aligned frames -> don't re-center per frame
@@ -201,7 +228,7 @@ def main() -> None:
     peak = max(counts) if counts else 0
     home = next((a for a in anchors if a), None)
     drift_max = 0.16 * min(fw, fh)
-    if peak and home:
+    if do_trim and peak and home:
         def gone(i: int) -> bool:
             if counts[i] < 0.45 * peak:
                 return True
@@ -248,9 +275,24 @@ def main() -> None:
     cw, ch = (ux1 - ux0) + pad * 2, (uy1 - uy0) + pad * 2
 
     strip = Image.new("RGBA", (cw * len(shifted), ch), (0, 0, 0, 0))
+    cell0 = None
     for i, s in enumerate(shifted):
         region = s.crop((ux0, uy0, ux1, uy1))
+        if i == 0:
+            cell0 = region
         strip.paste(region, (i * cw + pad, pad), region)
+
+    # Where the symbol RESTS in frame 0 and how big it is — so the game can pin
+    # the symbol body at the tile center and scale it to tile size, letting the
+    # launch/jump overflow the cell instead of shrinking the whole (tall) frame.
+    anchor_x, anchor_y, body_frac = 0.5, 0.5, None
+    if cell0 is not None:
+        bb = _body_box(cell0)
+        if bb:
+            cx = (bb[0] + bb[2]) / 2 + pad
+            cy = (bb[1] + bb[3]) / 2 + pad
+            anchor_x, anchor_y = round(cx / cw, 4), round(cy / ch, 4)
+            body_frac = round((bb[2] - bb[0]) / cw, 4)
 
     out_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -258,9 +300,14 @@ def main() -> None:
     )
     os.makedirs(out_dir, exist_ok=True)
     strip.save(os.path.join(out_dir, f"{sym}_{kind}.png"))
+    meta = {"frames": len(shifted), "fw": cw, "fh": ch, "fps": fps,
+            "anchorX": anchor_x, "anchorY": anchor_y}
+    if body_frac:
+        meta["bodyFrac"] = body_frac
     with open(os.path.join(out_dir, f"{sym}_{kind}.json"), "w") as f:
-        json.dump({"frames": len(cells), "fw": cw, "fh": ch, "fps": fps}, f)
-    print(f"{sym}_{kind}: {len(cells)} frames {cw}x{ch} @ {fps}fps -> public/symbols/anim/")
+        json.dump(meta, f)
+    print(f"{sym}_{kind}: {len(shifted)} frames {cw}x{ch} @ {fps}fps "
+          f"anchor({anchor_x},{anchor_y}) body={body_frac} -> public/symbols/anim/")
 
 
 if __name__ == "__main__":

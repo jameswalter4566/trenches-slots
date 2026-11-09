@@ -14,7 +14,7 @@ const gridEl = document.getElementById('grid')!;
 const bgSel = document.getElementById('bg') as HTMLSelectElement;
 const stages: { app: Application; anim?: AnimatedSprite }[] = [];
 
-interface SheetMeta { frames: number; fw: number; fh: number; fps: number }
+interface SheetMeta { frames: number; fw: number; fh: number; fps: number; anchorX?: number; anchorY?: number; bodyFrac?: number }
 
 async function loadStrip(sym: string, kind: string): Promise<{ frames: Texture[]; meta: SheetMeta } | null> {
 	try {
@@ -86,9 +86,10 @@ for (const sym of SYMBOLS) {
 
 		if (strip) {
 			const a = new AnimatedSprite(strip.frames);
-			a.anchor.set(0.5);
+			a.anchor.set(strip.meta.anchorX ?? 0.5, strip.meta.anchorY ?? 0.5);
 			a.animationSpeed = strip.meta.fps / 60;
-			a.scale.set(150 / Math.max(a.texture.width, a.texture.height));
+			const fw = a.texture.width, fh = a.texture.height;
+			a.scale.set(strip.meta.bodyFrac ? 88 / (strip.meta.bodyFrac * fw) : 150 / Math.max(fw, fh));
 			a.loop = true;
 			a.play();
 			root.addChild(a);

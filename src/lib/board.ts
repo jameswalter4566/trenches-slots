@@ -39,7 +39,7 @@ interface Tween { t: number; dur: number; ease: Ease; apply: (v: number) => void
 
 type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean };
 
-interface SheetAnim { frames: Texture[]; fps: number }
+interface SheetAnim { frames: Texture[]; fps: number; anchorX: number; anchorY: number; bodyFrac?: number }
 
 const SYMBOL_IDS: SymbolId[] = [
 	'rocket', 'whale', 'frog', 'diamond', 'moon',
@@ -118,13 +118,16 @@ export class SlotBoard {
 			try {
 				const res = await fetch(`/symbols/anim/${id}_${kind}.json`);
 				if (!res.ok) return;
-				const meta = (await res.json()) as { frames: number; fw: number; fh: number; fps: number };
+				const meta = (await res.json()) as { frames: number; fw: number; fh: number; fps: number; anchorX?: number; anchorY?: number; bodyFrac?: number };
 				const base = await Assets.load<Texture>(`/symbols/anim/${id}_${kind}.png`);
 				const frames: Texture[] = [];
 				for (let i = 0; i < meta.frames; i++) {
 					frames.push(new Texture({ source: base.source, frame: new Rectangle(i * meta.fw, 0, meta.fw, meta.fh) }));
 				}
-				this.anims.set(`${id}_${kind}`, { frames, fps: meta.fps || 14 });
+				this.anims.set(`${id}_${kind}`, {
+					frames, fps: meta.fps || 14,
+					anchorX: meta.anchorX ?? 0.5, anchorY: meta.anchorY ?? 0.5, bodyFrac: meta.bodyFrac,
+				});
 			} catch { /* no sheet yet */ }
 		})));
 
@@ -651,16 +654,24 @@ export class SlotBoard {
 		const color = PARTICLE[sym] ?? 0xffffff;
 		const x = sp.x, y0 = sp.y;
 
-		// premium path: play the symbol's win sprite sheet when one exists
+		// premium path: play the symbol's full win sprite sheet when one exists.
+		// Pin the symbol's RESTING body (anchorX/Y) to the tile centre and scale
+		// so the body ~= tile size; the launch/jump/flame then overflows the cell
+		// naturally instead of the whole tall frame being shrunk to fit.
 		const winSheet = this.anims.get(`${sym}_win`);
 		if (winSheet) {
 			const a = new AnimatedSprite(winSheet.frames);
-			a.anchor.set(0.5);
+			a.anchor.set(winSheet.anchorX, winSheet.anchorY);
 			a.x = x;
 			a.y = y0;
 			a.animationSpeed = winSheet.fps / 60;
 			a.loop = false;
-			a.scale.set(128 / Math.max(a.texture.width, a.texture.height));
+			const fw = a.texture.width, fh = a.texture.height;
+			const TILE = 96;
+			const scale = winSheet.bodyFrac
+				? TILE / (winSheet.bodyFrac * fw)       // body ~= one tile
+				: TILE / Math.max(fw, fh);              // fallback: fit whole frame
+			a.scale.set(scale);
 			this.fxLayer.addChild(a);
 			sp.destroy();
 			this.burst(x, y0, color, 7);
@@ -668,6 +679,7 @@ export class SlotBoard {
 				a.onComplete = () => resolve();
 				a.play();
 			});
+			await sleep(90);                            // let the final frame breathe
 			await this.tween(120, inCubic, (v) => { a.alpha = 1 - v; });
 			a.destroy();
 			return;
