@@ -1,0 +1,250 @@
+{
+  "fps": 24,
+  "durationMs": 1125,
+  "loop": false,
+  "frames": [
+    {
+      "frame": 1,
+      "darkTransition": 0.0,
+      "redEyes": 0.0,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.0,
+      "bullVisiblePixels": 227013
+    },
+    {
+      "frame": 2,
+      "darkTransition": 0.019676,
+      "redEyes": 0.0,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.0,
+      "bullVisiblePixels": 227013
+    },
+    {
+      "frame": 3,
+      "darkTransition": 0.074074,
+      "redEyes": 0.0,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.0,
+      "bullVisiblePixels": 227013
+    },
+    {
+      "frame": 4,
+      "darkTransition": 0.15625,
+      "redEyes": 0.0,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.028,
+      "bullVisiblePixels": 227752
+    },
+    {
+      "frame": 5,
+      "darkTransition": 0.259259,
+      "redEyes": 0.034294,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.104,
+      "bullVisiblePixels": 226936
+    },
+    {
+      "frame": 6,
+      "darkTransition": 0.376157,
+      "redEyes": 0.1262,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.216,
+      "bullVisiblePixels": 225618
+    },
+    {
+      "frame": 7,
+      "darkTransition": 0.5,
+      "redEyes": 0.259259,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.352,
+      "bullVisiblePixels": 223706
+    },
+    {
+      "frame": 8,
+      "darkTransition": 0.623843,
+      "redEyes": 0.41701,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.5,
+      "bullVisiblePixels": 221967
+    },
+    {
+      "frame": 9,
+      "darkTransition": 0.740741,
+      "redEyes": 0.58299,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.648,
+      "bullVisiblePixels": 220022
+    },
+    {
+      "frame": 10,
+      "darkTransition": 0.84375,
+      "redEyes": 0.740741,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.784,
+      "bullVisiblePixels": 218141
+    },
+    {
+      "frame": 11,
+      "darkTransition": 0.925926,
+      "redEyes": 0.8738,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.896,
+      "bullVisiblePixels": 216357
+    },
+    {
+      "frame": 12,
+      "darkTransition": 0.980324,
+      "redEyes": 0.965706,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 0.972,
+      "bullVisiblePixels": 215746
+    },
+    {
+      "frame": 13,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 1.0,
+      "bullVisiblePixels": 216224
+    },
+    {
+      "frame": 14,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 1.0,
+      "bullVisiblePixels": 216666
+    },
+    {
+      "frame": 15,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.0,
+      "forwardTravelY": 0,
+      "headLowering": 1.0,
+      "bullVisiblePixels": 216784
+    },
+    {
+      "frame": 16,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.012397,
+      "forwardTravelY": 0.638618,
+      "headLowering": 0.9636,
+      "bullVisiblePixels": 222266
+    },
+    {
+      "frame": 17,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.049587,
+      "forwardTravelY": 5.108941,
+      "headLowering": 0.8768,
+      "bullVisiblePixels": 238817
+    },
+    {
+      "frame": 18,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.11157,
+      "forwardTravelY": 17.242675,
+      "headLowering": 0.7732,
+      "bullVisiblePixels": 270394
+    },
+    {
+      "frame": 19,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.198347,
+      "forwardTravelY": 40.871525,
+      "headLowering": 0.6864,
+      "bullVisiblePixels": 312021
+    },
+    {
+      "frame": 20,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.309917,
+      "forwardTravelY": 79.827198,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 353879
+    },
+    {
+      "frame": 21,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.446281,
+      "forwardTravelY": 137.941397,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 365631
+    },
+    {
+      "frame": 22,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.607438,
+      "forwardTravelY": 219.04583,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 323229
+    },
+    {
+      "frame": 23,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 1.793388,
+      "forwardTravelY": 326.972201,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 231688
+    },
+    {
+      "frame": 24,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 2.004132,
+      "forwardTravelY": 465.552216,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 83746
+    },
+    {
+      "frame": 25,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 2.239669,
+      "forwardTravelY": 638.617581,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 0
+    },
+    {
+      "frame": 26,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 2.5,
+      "forwardTravelY": 850.0,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 0
+    },
+    {
+      "frame": 27,
+      "darkTransition": 1.0,
+      "redEyes": 1.0,
+      "scale": 2.785124,
+      "forwardTravelY": 1103.53118,
+      "headLowering": 0.65,
+      "bullVisiblePixels": 0
+    }
+  ]
+}
