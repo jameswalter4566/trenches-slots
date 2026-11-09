@@ -1,0 +1,250 @@
+{
+  "fps": 24,
+  "durationMs": 1125,
+  "loop": true,
+  "frames": [
+    {
+      "frame": 1,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": -60.0,
+      "reflectionStrength": 0.0
+    },
+    {
+      "frame": 2,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": -35.92593,
+      "reflectionStrength": 0.003504
+    },
+    {
+      "frame": 3,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": -11.85185,
+      "reflectionStrength": 0.013828
+    },
+    {
+      "frame": 4,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 12.22222,
+      "reflectionStrength": 0.030414
+    },
+    {
+      "frame": 5,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 36.2963,
+      "reflectionStrength": 0.052369
+    },
+    {
+      "frame": 6,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 60.37037,
+      "reflectionStrength": 0.07851
+    },
+    {
+      "frame": 7,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 84.44444,
+      "reflectionStrength": 0.107426
+    },
+    {
+      "frame": 8,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 108.51852,
+      "reflectionStrength": 0.137559
+    },
+    {
+      "frame": 9,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 132.59259,
+      "reflectionStrength": 0.167284
+    },
+    {
+      "frame": 10,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 156.66667,
+      "reflectionStrength": 0.195
+    },
+    {
+      "frame": 11,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 180.74074,
+      "reflectionStrength": 0.219211
+    },
+    {
+      "frame": 12,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 204.81481,
+      "reflectionStrength": 0.238613
+    },
+    {
+      "frame": 13,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 228.88889,
+      "reflectionStrength": 0.25216
+    },
+    {
+      "frame": 14,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 252.96296,
+      "reflectionStrength": 0.259121
+    },
+    {
+      "frame": 15,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 277.03704,
+      "reflectionStrength": 0.259121
+    },
+    {
+      "frame": 16,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 301.11111,
+      "reflectionStrength": 0.25216
+    },
+    {
+      "frame": 17,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 325.18519,
+      "reflectionStrength": 0.238613
+    },
+    {
+      "frame": 18,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 349.25926,
+      "reflectionStrength": 0.219211
+    },
+    {
+      "frame": 19,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 373.33333,
+      "reflectionStrength": 0.195
+    },
+    {
+      "frame": 20,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 397.40741,
+      "reflectionStrength": 0.167284
+    },
+    {
+      "frame": 21,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 421.48148,
+      "reflectionStrength": 0.137559
+    },
+    {
+      "frame": 22,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 445.55556,
+      "reflectionStrength": 0.107426
+    },
+    {
+      "frame": 23,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 469.62963,
+      "reflectionStrength": 0.07851
+    },
+    {
+      "frame": 24,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 493.7037,
+      "reflectionStrength": 0.052369
+    },
+    {
+      "frame": 25,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 517.77778,
+      "reflectionStrength": 0.030414
+    },
+    {
+      "frame": 26,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 541.85185,
+      "reflectionStrength": 0.013828
+    },
+    {
+      "frame": 27,
+      "yOffset": 0.0,
+      "angleDegrees": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "reflectionCenterX": 565.92593,
+      "reflectionStrength": 0.003504
+    }
+  ]
+}

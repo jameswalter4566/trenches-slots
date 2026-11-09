@@ -7,7 +7,7 @@ export const COLS = 6;
 export const ROWS = 5;
 
 export type SymbolId =
-	| 'bull' | 'rocket' | 'whale' | 'frog' | 'diamond' | 'moon'  // high pays
+	| 'goldbar' | 'bull' | 'rocket' | 'whale' | 'frog' | 'diamond' | 'moon'  // high pays
 	| 'coinG' | 'coinP' | 'coinB' | 'coinT'                 // low pays (coins)
 	| 'scatter'                                             // GOD CANDLE scatter
 	| 'orb'                                                 // multiplier orb
@@ -31,6 +31,7 @@ export const MONEYGUN_PRIZES: [number, number][] = [
 
 // Pays as multiples of total bet for counts [8-9, 10-11, 12+] anywhere on the grid.
 export const PAYS: Record<PayingSymbol, [number, number, number]> = {
+	goldbar: [12,  30,  60],
 	bull:    [15,  40,  80],
 	rocket:  [10,  25,  50],
 	whale:   [2.5, 10,  25],
@@ -60,6 +61,7 @@ export const BONUS_BUY_COST = 100; // × bet
 export const WEIGHTS: [SymbolId, number][] = [
 	['rocket', 55],
 	['bull', 55],
+	['goldbar', 45],
 	['bear', 26],
 	['moneygun', 20],
 	['scatter', 22],
@@ -77,6 +79,7 @@ export const ORB_VALUES: [number, number][] = [
 
 // Presentation metadata the board uses to draw each symbol.
 export const SYMBOL_META: Record<SymbolId, { glyph: string; tile: number; edge: number; label: string }> = {
+	goldbar: { glyph: '\u{1F947}', tile: 0x4a3a12, edge: 0x30250b, label: 'GOLD BAR' },
 	bull:    { glyph: '\u{1F402}', tile: 0x4a2d1d, edge: 0x301c12, label: 'BULL' },
 	rocket:  { glyph: '\u{1F680}', tile: 0x3a2d55, edge: 0x241b38, label: 'ROCKET' },
 	whale:   { glyph: '\u{1F40B}', tile: 0x1d3a55, edge: 0x122538, label: 'WHALE' },
