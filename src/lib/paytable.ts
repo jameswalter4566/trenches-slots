@@ -48,14 +48,14 @@ export const MYSTERY_JACKPOT_CHANCE = 0.010; // per candle
 
 // Pays as multiples of total bet for counts [8-9, 10-11, 12+] anywhere on the grid.
 export const PAYS: Record<PayingSymbol, [number, number, number]> = {
-	goldbar: [0.85, 2.2,  5.2],
-	bull:    [1.1,  2.6,  6.5],
-	rocket:  [0.78, 1.75, 4.3],
+	goldbar: [1,    2.6,  6.1],
+	bull:    [1.3,  3.1,  7.7],
+	rocket:  [0.92, 2.1,  5.1],
 	whale:   [0.4,  1,    2.5],   // retired (not in WEIGHTS)
 	frog:    [0.3,  0.7,  2],     // retired
-	diamond: [0.08, 0.2,  0.58],  // mid-low (real art)
+	diamond: [0.095, 0.24, 0.68], // low pay (real art)
 	moon:    [0.15, 0.4,  1.3],   // retired
-	terminal:[0.062, 0.15, 0.46], // mid-low (real art)
+	terminal:[0.073, 0.18, 0.54], // low pay (real art)
 	coinG:   [0.062, 0.15, 0.46],
 	coinP:   [0.045, 0.115, 0.35],
 	coinB:   [0.036, 0.09, 0.27],
@@ -80,20 +80,19 @@ export const BONUS_BUY_COST = 100; // × bet
 // placeholders (whale/frog/moon) are removed. 8 pay symbols keeps the grid
 // diluted enough for a real ~96.5% RTP. Tuned via tools/rtp.ts.
 export const WEIGHTS: [SymbolId, number][] = [
-	['coinT', 180],     // low fillers — the grid is mostly these (most spins lose)
-	['coinB', 160],
-	['coinP', 140],
-	['coinG', 120],
-	['terminal', 120],  // mid-low (real art)
-	['diamond', 95],    // mid-low (real art)
-	['rocket', 24],     // high pays — rare
-	['bull', 22],
-	['goldbar', 26],
-	['bear', 14],       // feature: dumps the win
-	['orb', 16],        // feature: free-spins multiplier
-	['scatter', 12],    // mystery candle
-	['moneygun', 4],    // bonus cash
-	['vault', 2],       // rare big bonus
+	// ONLY real animation-pack tiles + jackpot candle. No drawn coins/whale/frog/moon.
+	// BEAR is the common grid-filler: it DUMPS wins, so a board full of bears is
+	// self-limiting (keeps RTP sane). Orb is rare (only multiplies in free spins).
+	['bear', 255],       // DILUTION — common, dumps the win (bear market everywhere)
+	['diamond', 90],     // low pay (real art)
+	['terminal', 82],    // low pay (real art)
+	['goldbar', 36],     // high pays - rarer
+	['rocket', 34],
+	['bull', 32],
+	['orb', 14],         // free-spins multiplier (rare so FS can't run away)
+	['scatter', 11],     // mystery candle / jackpot
+	['moneygun', 4],     // bonus cash
+	['vault', 2],        // rare big bonus
 ];
 
 // Orb multiplier values and weights (sum applied to the tumble-sequence win).

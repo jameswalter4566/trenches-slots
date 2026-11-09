@@ -280,10 +280,13 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 
 	// --- settle ---
 	const scatterCount = countScatters(grid);
+	// Orbs are the common grid-filler now, so they only MULTIPLY inside free spins
+	// (accumulating total). In the base game they're benign dilution (no multiplier),
+	// otherwise a grid full of orbs would blow up the RTP.
 	let appliedMult = 0;
 	let tumbleWin = baseWin;
-	if (baseWin > 0 && orbTotal > 0) {
-		appliedMult = opts.freeSpin ? (opts.fsTotalMult ?? 0) + orbTotal : orbTotal;
+	if (opts.freeSpin && baseWin > 0 && orbTotal > 0) {
+		appliedMult = (opts.fsTotalMult ?? 0) + orbTotal;
 		tumbleWin = Math.round(baseWin * appliedMult);
 	}
 	const scatterWin =
