@@ -21,6 +21,23 @@ import sys
 from PIL import Image
 
 
+def _kill_dark_haze(im: Image.Image, lum_max: int, alpha_max: int) -> None:
+    """Clear dim + semi-transparent pixels (baked dark halo); keep bright art."""
+    px = im.load()
+    w, h = im.size
+    cleared = 0
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            lum = (r * 299 + g * 587 + b * 114) // 1000
+            if lum <= lum_max and a <= alpha_max:
+                px[x, y] = (r, g, b, 0)
+                cleared += 1
+    print(f"dark-haze kill: cleared {cleared} dim/semi px")
+
+
 def key_background(im: Image.Image, tol: int = 26) -> Image.Image:
     """Remove the baked background: BFS from every border pixel, clearing pixels
     whose color is within `tol` per channel of the median corner color."""
@@ -103,6 +120,10 @@ def main() -> None:
         ALPHA_FLOOR = 32
         a = im.split()[3].point(lambda v: 0 if v < ALPHA_FLOOR else v)
         im.putalpha(a)
+        # dark-haze kill: AI often bakes a dim mottled halo at mid alpha. Clear
+        # pixels that are both DIM and SEMI-transparent (background), while bright
+        # flame/smoke/art survives even at low alpha.
+        _kill_dark_haze(im, lum_max=70, alpha_max=150)
 
     w, h = im.size
     fw, fh = w // cols, h // rows

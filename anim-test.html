@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>GOD CANDLE — Animation Test</title>
+		<style>
+			@font-face { font-family: 'DynaPuff'; src: url('/fonts/DynaPuff-Variable.ttf') format('truetype'); font-weight: 400 700; }
+			@font-face { font-family: 'IBM Plex Mono'; src: url('/fonts/IBMPlexMono-Regular.ttf') format('truetype'); }
+			* { box-sizing: border-box; margin: 0; }
+			body { background: #0c0d11; color: #fff; font-family: 'IBM Plex Mono', monospace; padding: 24px; }
+			h1 { font-family: 'DynaPuff'; color: #2be26a; font-size: 30px; }
+			.sub { color: #7a8294; font-size: 12px; letter-spacing: 2px; margin: 6px 0 22px; }
+			.grid { display: flex; flex-wrap: wrap; gap: 18px; }
+			.card {
+				width: 220px; background: #171a22; border: 2px solid #262b38; border-radius: 16px;
+				padding: 14px; display: flex; flex-direction: column; align-items: center;
+			}
+			.card.missing { opacity: 0.4; }
+			.stage {
+				width: 180px; height: 180px; border-radius: 12px; background: #0e1016;
+				display: flex; align-items: center; justify-content: center; position: relative;
+				border: 1px solid #222634; overflow: hidden;
+			}
+			.stage canvas { image-rendering: auto; }
+			.name { font-family: 'DynaPuff'; font-size: 18px; color: #fff; margin-top: 10px; }
+			.meta { font-size: 11px; color: #7a8294; margin-top: 4px; min-height: 15px; }
+			.row { display: flex; gap: 8px; margin-top: 10px; }
+			button {
+				font-family: 'IBM Plex Mono'; font-size: 11px; color: #06250f; background: #2be26a;
+				border: none; border-radius: 8px; padding: 7px 12px; cursor: pointer; letter-spacing: 1px;
+			}
+			button.ghost { background: #262b38; color: #cfd6e4; }
+			.controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+			select { font-family: 'IBM Plex Mono'; background: #171a22; color: #fff; border: 1px solid #262b38; border-radius: 8px; padding: 6px 10px; }
+			a.back { color: #2be26a; text-decoration: none; font-size: 12px; }
+		</style>
+	</head>
+	<body>
+		<h1>GOD CANDLE — Animation Test</h1>
+		<div class="sub">EVERY SLICED SPRITE SHEET, PLAYED IN ISOLATION · <a class="back" href="/">← back to game</a></div>
+		<div class="controls">
+			<label>Preview background:</label>
+			<select id="bg">
+				<option value="#0e1016">game dark</option>
+				<option value="#2a2f3d">mid gray</option>
+				<option value="#ffffff">white</option>
+				<option value="#2be26a">brand green</option>
+				<option value="transparent">checker</option>
+			</select>
+			<button id="playall" class="ghost">▶ replay all</button>
+		</div>
+		<div class="grid" id="grid"></div>
+		<script type="module" src="/src/anim-test.ts"></script>
+	</body>
+</html>
