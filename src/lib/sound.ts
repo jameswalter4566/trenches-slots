@@ -63,6 +63,7 @@ class Sfx {
 	orbApply() { [880, 1108, 1318, 1760].forEach((f, i) => this.tone(f, 0.16, { gain: 0.08, delay: i * 0.06 })); }
 	scatterLand() { this.tone(196, 0.55, { type: 'triangle', gain: 0.12 }); this.tone(392, 0.4, { gain: 0.07, delay: 0.04 }); }
 	rollTick() { this.tone(1040, 0.035, { type: 'square', gain: 0.03 }); }
+	candleTick() { this.tone(560 + Math.random() * 220, 0.05, { type: 'square', gain: 0.03 }); }
 	win() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.22, { gain: 0.1, delay: i * 0.09 })); }
 	bigWin() {
 		[392, 523, 659, 784, 1047, 1318].forEach((f, i) => this.tone(f, 0.3, { gain: 0.11, delay: i * 0.1 }));

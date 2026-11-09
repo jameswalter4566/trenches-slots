@@ -116,6 +116,15 @@ function collectOrbs(cells: NewCell[]): OrbCell[] {
 		.map((n) => ({ col: n.col, row: n.row, value: n.cell.orb! }));
 }
 
+/** GOD CANDLE JACKPOT outcome: the peak multiplier the candle climbs to before it
+ * rugs. Heavy-tailed (rugs.fun style): most runs peak low, rare moon shots to 1000x.
+ * peakX follows P(peak ≥ x) ≈ k/x, inverse-sampled, clamped to [1.5, 1000]. */
+export function godCandlePeak(): number {
+	const u = Math.random();
+	const peak = Math.min(1000, Math.max(1.5, 0.92 / (1 - u)));
+	return Math.round(peak * 100) / 100;
+}
+
 /** Cosmetic resting grid shown before the first spin — no scatters/orbs, no money. */
 export function displayGrid(): Cell[][] {
 	const grid: Cell[][] = [];

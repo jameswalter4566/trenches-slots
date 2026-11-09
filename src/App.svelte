@@ -1,15 +1,20 @@
-<script lang="ts">
+﻿<script lang="ts">
 	import { onMount } from 'svelte';
 	import { SlotBoard } from './lib/board';
-	import { displayGrid, spin, type SpinResult } from './lib/sim';
+	import { displayGrid, godCandlePeak, spin, type SpinResult } from './lib/sim';
 	import { fmtMoney } from './lib/session';
 	import { sfx } from './lib/sound';
 	import { BONUS_BUY_COST, FREE_SPINS_AWARD, FS_RETRIGGER_SPINS } from './lib/paytable';
 
 	const BET_LEVELS = [200000, 400000, 600000, 1_000000, 2_000000, 4_000000, 10_000000, 20_000000, 50_000000, 100_000000];
+	const params = new URLSearchParams(location.search);
 	// dev art preview: ?testwin=rocket guarantees that symbol wins every spin
-	const TEST_WIN = (new URLSearchParams(location.search).get('testwin') ?? undefined) as
+	const TEST_WIN = (params.get('testwin') ?? undefined) as
 		import('./lib/paytable').PayingSymbol | undefined;
+	// dev: ?testjackpot forces the GOD CANDLE jackpot; ?jackpotx=250 forces its peak
+	const TEST_JACKPOT = params.has('testjackpot') || params.has('jackpotx');
+	const JACKPOT_X = params.has('jackpotx') ? Number(params.get('jackpotx')) : 0;
+	const nextPeak = () => (JACKPOT_X > 0 ? JACKPOT_X : godCandlePeak());
 
 	let boardEl: HTMLDivElement;
 	let board: SlotBoard | null = null;
@@ -53,11 +58,27 @@
 		spinning = true;
 		lastWin = 0;
 		balance -= bet;
+		if (TEST_JACKPOT) {
+			const win = await board.godCandleJackpot(bet, nextPeak());
+			balance += win;
+			lastWin = win;
+			await board.primeIdle(displayGrid());
+			spinning = false;
+			return;
+		}
 		const result = spin(bet, { forceWin: TEST_WIN });
 		await board.replaySpin(result);
 		balance += result.totalWinMicro;
 		lastWin = result.totalWinMicro;
-		if (result.triggersFreeSpins) await runFreeSpins();
+		// 6+ god candles = JACKPOT (the candle comes alive); 4-5 = free spins
+		if (result.scatterCount >= 6) {
+			const win = await board.godCandleJackpot(bet, nextPeak());
+			balance += win;
+			lastWin = win;
+			await board.primeIdle(displayGrid());
+		} else if (result.triggersFreeSpins) {
+			await runFreeSpins();
+		}
 		spinning = false;
 	}
 
@@ -165,7 +186,7 @@
 
 		<div class="readout">
 			<span class="readout-label">WIN</span>
-			<span class="readout-value win-value">{lastWin > 0 ? fmtMoney(lastWin) : '—'}</span>
+			<span class=”readout-value win-value”>{lastWin > 0 ? fmtMoney(lastWin) : '—'}</span>
 		</div>
 	</footer>
 

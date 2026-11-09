@@ -19,6 +19,7 @@ const LW = BOARD_W + FRAME * 2;
 const LH = BOARD_H + FRAME * 2 + METER_H + 14;
 
 const GREEN = 0x2be26a;
+const RED = 0xf0414d;
 const GOLD = 0xf7c843;
 const EMOJI_FONT = 'Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, sans-serif';
 
@@ -494,7 +495,7 @@ export class SlotBoard {
 		}
 	}
 
-	private burst(x: number, y: number, color: number, n = 9) {
+	private burst(x: number, y: number, color: number, n = 9, layer?: Container) {
 		for (let i = 0; i < n; i++) {
 			const g = new Graphics();
 			const size = 5 + Math.random() * 8;
@@ -503,7 +504,7 @@ export class SlotBoard {
 			g.y = y;
 			const ang = Math.random() * Math.PI * 2;
 			const sp = 260 + Math.random() * 420;
-			this.fxLayer.addChild(g);
+			(layer ?? this.fxLayer).addChild(g);
 			this.particles.push({ g, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 260, life: 0, max: 380 + Math.random() * 240 });
 		}
 	}
@@ -870,6 +871,169 @@ export class SlotBoard {
 		}
 		this.shake = 300;
 		await Promise.all(jobs);
+	}
+
+	// ---------- GOD CANDLE JACKPOT ----------
+	/** The scatter god-candle comes alive: a live candlestick charges (fluctuating
+	 * open/close), then BOOMS up through the board, shattering the tiles above it,
+	 * while a rugs.fun-style multiplier climbs toward a peak (moon) or rugs.
+	 * Returns the jackpot win = round(peakX * bet). Pure presentation. */
+	async godCandleJackpot(betMicro: number, peakX: number): Promise<number> {
+		this.idleOn = false;
+		const ov = this.overlayLayer;
+		const centreX = LW / 2;
+		const baseY = FRAME + BOARD_H - 6;    // candle foot, at the board bottom
+		const topLimit = FRAME + 24;          // highest the candle head can draw
+
+		// darken the board
+		const veil = new Graphics();
+		veil.rect(0, 0, LW, LH).fill({ color: 0x05070c, alpha: 1 });
+		veil.alpha = 0;
+		ov.addChild(veil);
+		sfx.scatterLand();
+		await this.tween(260, outCubic, (v) => { veil.alpha = v * 0.86; });
+
+		const title = new Text({
+			text: 'GOD CANDLE', style: {
+				fontFamily: 'DynaPuff', fontSize: 58, fontWeight: '700', fill: GREEN,
+				stroke: { color: 0x05351b, width: 10 },
+			},
+		});
+		title.anchor.set(0.5);
+		title.x = centreX; title.y = FRAME + 60; title.alpha = 0;
+		ov.addChild(title);
+		await this.tween(360, outBack, (v) => { title.scale.set(0.6 + v * 0.4); title.alpha = v; });
+
+		const candle = new Graphics();
+		ov.addChild(candle);
+		const multText = new Text({
+			text: '1.00x', style: {
+				fontFamily: 'DynaPuff', fontSize: 52, fontWeight: '700', fill: 0xffffff,
+				stroke: { color: 0x05351b, width: 9 },
+			},
+		});
+		multText.anchor.set(0.5);
+		ov.addChild(multText);
+
+		const bodyW = 58;
+		// draw helper: body baseY..bodyTopY + wick up to headY, tinted green/red
+		const draw = (headY: number, bodyFrac: number, color: number, glow: number) => {
+			candle.clear();
+			const bodyTopY = baseY - (baseY - headY) * bodyFrac;
+			// glow
+			candle.roundRect(centreX - bodyW / 2 - 10, headY - 10, bodyW + 20, baseY - headY + 20, 14)
+				.fill({ color: glow, alpha: 0.18 });
+			// upper wick
+			candle.rect(centreX - 3, headY, 6, bodyTopY - headY).fill(color);
+			// body
+			candle.roundRect(centreX - bodyW / 2, bodyTopY, bodyW, baseY - bodyTopY, 10).fill(color);
+			candle.roundRect(centreX - bodyW / 2, bodyTopY, bodyW, baseY - bodyTopY, 10).stroke({ width: 3, color: 0x0f7a38 });
+			// gloss
+			candle.roundRect(centreX - bodyW / 2 + 8, bodyTopY + 6, 10, Math.max(8, baseY - bodyTopY - 14), 5)
+				.fill({ color: 0xffffff, alpha: 0.18 });
+		};
+
+		// 1) CHARGE: small candle, open/close fluctuating red/green
+		let chargeHead = baseY - 70;
+		for (let i = 0; i < 26; i++) {
+			const up = Math.random() < 0.52;
+			const h = 50 + Math.random() * 60;
+			draw(baseY - h, 0.5 + Math.random() * 0.3, up ? GREEN : RED, up ? GREEN : RED);
+			multText.text = `${(1 + Math.random() * 0.4).toFixed(2)}x`;
+			multText.x = centreX; multText.y = baseY - h - 40;
+			if (i % 3 === 0) sfx.candleTick();
+			await sleep(42);
+		}
+
+		// 2) BOOM: climb to the peak, candle grows (log height), breaking rows above
+		sfx.bigWin();
+		this.shake = 260;
+		const maxH = baseY - topLimit;
+		const hAt = (m: number) => Math.min(maxH, (Math.log(m) / Math.log(1000)) * maxH * 1.15);
+		const rowCY = (r: number) => FRAME + r * CELL + CELL / 2;
+		const brokenRows = new Set<number>();
+		const climbMs = 2600 + Math.min(1400, Math.log(peakX) * 320);
+		let lastTick = 0;
+		await this.tween(climbMs, (x) => 1 - Math.pow(1 - x, 2.4), (v) => {
+			// fluctuating climb: eased base × small jitter, biased up
+			const base = 1 + (peakX - 1) * v;
+			const jitter = 1 + Math.sin(v * 46) * 0.05 * (1 - v) + (Math.random() - 0.5) * 0.015;
+			const m = Math.max(1, base * jitter);
+			const headY = baseY - hAt(m);
+			draw(headY, 0.72, GREEN, GREEN);
+			multText.text = `${m.toFixed(2)}x`;
+			multText.x = centreX;
+			multText.y = Math.max(topLimit + 6, headY - 40);
+			multText.style.fontSize = 52 + Math.min(44, Math.log(m) * 10);
+			// shatter any row the candle head has now risen past
+			for (let r = ROWS - 1; r >= 0; r--) {
+				if (!brokenRows.has(r) && headY <= rowCY(r)) {
+					brokenRows.add(r);
+					this.shatterRow(r, ov);
+					this.shake = Math.max(this.shake, 200);
+				}
+			}
+			if (performance.now() - lastTick > 55) { sfx.candleTick(); sfx.rollTick(); lastTick = performance.now(); }
+		});
+
+		// 3) SETTLE: lock the peak, crown flash
+		const moon = peakX >= 50;
+		draw(baseY - hAt(peakX), 0.74, GREEN, moon ? GOLD : GREEN);
+		multText.text = `${peakX.toFixed(2)}x`;
+		multText.style.fill = moon ? GOLD : 0xffffff;
+		this.shake = 320;
+		this.burst(centreX, multText.y, moon ? GOLD : GREEN, 26, ov);
+		for (let i = 0; i < 18; i++) setTimeout(() => this.burst(Math.random() * LW, topLimit + 40, i % 2 ? GOLD : GREEN, 3, ov), i * 55);
+		sfx.win();
+
+		const tag = new Text({
+			text: moon ? 'MOON!' : 'JACKPOT', style: {
+				fontFamily: 'DynaPuff', fontSize: 46, fontWeight: '700', fill: moon ? GOLD : GREEN,
+				stroke: { color: 0x05351b, width: 9 },
+			},
+		});
+		tag.anchor.set(0.5); tag.x = centreX; tag.y = FRAME + 60; tag.scale.set(0);
+		title.visible = false;
+		ov.addChild(tag);
+		await this.tween(420, outBack, (v) => tag.scale.set(v));
+
+		const winMicro = Math.round(betMicro * peakX);
+		const payout = new Text({
+			text: fmtMoney(winMicro), style: {
+				fontFamily: 'DynaPuff', fontSize: 40, fontWeight: '700', fill: 0xffffff,
+				stroke: { color: 0x05351b, width: 8 },
+			},
+		});
+		payout.anchor.set(0.5); payout.x = centreX; payout.y = LH - METER_H; payout.alpha = 0;
+		ov.addChild(payout);
+		await this.tween(500, outCubic, (v) => { payout.alpha = v; payout.text = fmtMoney(Math.round(winMicro * v)); });
+		await sleep(1500);
+
+		await this.tween(300, inCubic, (v) => {
+			veil.alpha = 0.86 * (1 - v); candle.alpha = 1 - v; multText.alpha = 1 - v;
+			tag.alpha = 1 - v; payout.alpha = 1 - v;
+		});
+		veil.destroy(); candle.destroy(); multText.destroy(); tag.destroy(); payout.destroy(); title.destroy();
+		// board is spent (tiles shattered) — caller refills on the next spin
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+			const s = this.sprites[c][r];
+			if (s) { s.destroy(); this.sprites[c][r] = null; }
+		}
+		this.firstSpin = true;
+		return winMicro;
+	}
+
+	private shatterRow(r: number, layer: Container) {
+		for (let c = 0; c < COLS; c++) {
+			const sp = this.sprites[c][r];
+			if (!sp) continue;
+			this.sprites[c][r] = null;
+			const px = sp.x + FRAME, py = sp.y + FRAME; // board-local -> root (overlay) coords
+			this.burst(px, py, 0xffffff, 6, layer);
+			this.burst(px, py, GREEN, 4, layer);
+			void this.tween(220, inCubic, (v) => { sp.scale.set(Math.max(0.01, 1 - v)); sp.alpha = 1 - v; sp.rotation = v * 0.6; })
+				.then(() => sp.destroy());
+		}
 	}
 
 	// ---------- win meter ----------
