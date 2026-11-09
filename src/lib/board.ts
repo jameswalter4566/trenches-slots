@@ -6,6 +6,7 @@
 import { AnimatedSprite, Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { COLS, ROWS, SYMBOL_META, COIN_COLORS, type Cell, type SymbolId } from './paytable';
 import type { SpinResult, TumbleStep } from './sim';
+import { displayGrid } from './sim';
 import { fmtMoney } from './session';
 import { sfx } from './sound';
 
@@ -509,174 +510,8 @@ export class SlotBoard {
 		this.drawLiveCandle(sp);
 	}
 
-	/** Reveal every mystery candle on the board (flip '?' → value, grow it), then
-	 * collect the summed candle prize onto the win meter. */
-	private async revealCandles(result: SpinResult): Promise<void> {
-		const jobs: Promise<void>[] = [];
-		let i = 0;
-		for (const info of result.candleReveal) {
-			const sp = this.sprites[info.col][info.row];
-			if (sp?.cellData.sym !== 'scatter' || !sp.mc) continue;
-			// stagger so multiple reveals cascade instead of stacking their charts
-			const delay = i * 220;
-			jobs.push((async () => { if (delay) await sleep(delay); await this.popCandle(sp, info); })());
-			i++;
-		}
-		if (!jobs.length) return;
-		sfx.winPulse();
-		await Promise.all(jobs);
-		if (result.candlePrizeMicro > 0) await this.rollupAsync(result.totalWinMicro, 520);
-	}
 
-	/** Reveal a mystery candle by playing a COMPACT price-action trade run over the
-	 * tile (a mini rugs.fun chart): candles tick up live, the multiplier counts up,
-	 * then the tile settles on its revealed value. The jackpot candle (mult < 0) just
-	 * flags here — App.svelte fires the full-board run separately. */
-	private async popCandle(sp: CellSprite, info: { mult: number; masked: boolean }): Promise<void> {
-		const st = sp.mc!;
-		st.revealing = true;
-		const cx = sp.x + FRAME, cyc = sp.y + FRAME;
-		const ov = this.overlayLayer;
-		const jackpot = info.mult < 0;
-		const up = info.mult >= 1;
-		const bigCol = jackpot ? 0xffffff : (up ? GOLD : 0x8ce6b4);
 
-		// ---- floating mini chart panel above the tile ----
-		const panel = new Container();
-		panel.x = cx; panel.y = cyc; panel.alpha = 0;
-		ov.addChild(panel);
-		const PW = 122, PH = 66, topY = -CELL / 2 - PH - 2; // chart box sits just above the tile
-		const bg = new Graphics();
-		bg.roundRect(-PW / 2, topY, PW, PH, 10).fill({ color: 0x0a0e16, alpha: 0.95 });
-		bg.roundRect(-PW / 2, topY, PW, PH, 10).stroke({ width: 1.5, color: 0x1d2a44 });
-		const gridG = new Graphics(), candleG = new Graphics(), dotG = new Graphics();
-		const num = new Text({
-			text: '1.00×', style: {
-				fontFamily: 'DynaPuff', fontSize: 20, fontWeight: '700', fill: bigCol,
-				stroke: { color: 0x05120a, width: 5 },
-			},
-		});
-		num.anchor.set(0.5); num.x = 0; num.y = topY - 11;
-		panel.addChild(bg, gridG, candleG, dotG, num);
-
-		// chart geometry (panel-local). target peak drives the visual pump; the awarded
-		// number counts to info.mult (which can be < 1 — a modest reveal).
-		const peak = jackpot ? 8 : Math.max(1.35, info.mult);
-		const padL = -PW / 2 + 7, padR = PW / 2 - 7, padT = topY + 8, padB = topY + PH - 7;
-		const iw = padR - padL, ih = padB - padT;
-		const CWD = 9, GAPD = 4, slotD = CWD + GAPD;
-		const completed: number[][] = [];
-		let live: { open: number; high: number; low: number; price: number } | null = null;
-		let yLo = 0.8, yHi = peak * 1.1;
-
-		const draw = () => {
-			const cur = completed.length;
-			const xLast = padR - CWD;
-			const xOf = (i: number) => xLast - (cur - i) * slotD;
-			let lo = Infinity, hi = -Infinity;
-			for (const cd of completed) { lo = Math.min(lo, cd[2] / 100); hi = Math.max(hi, cd[1] / 100); }
-			if (live) { lo = Math.min(lo, live.low / 100); hi = Math.max(hi, live.high / 100); }
-			if (!isFinite(lo)) { lo = 0.85; hi = peak; }
-			const pv = (hi - lo) * 0.14 + 0.03; lo = Math.max(0, lo - pv); hi += pv;
-			yLo += (lo - yLo) * 0.3; yHi += (hi - yHi) * 0.3;
-			const yOf = (m: number) => padB - ((m - yLo) / Math.max(0.01, yHi - yLo)) * ih;
-
-			gridG.clear();
-			gridG.moveTo(padL, padB).lineTo(padR, padB).stroke({ width: 1, color: 0x1b2234 });
-
-			candleG.clear();
-			const dc = (i: number, o: number, h: number, l: number, c: number) => {
-				const bx = xOf(i); if (bx + CWD < padL) return;
-				const col = c >= o ? GREEN : RED, cxp = bx + CWD / 2;
-				const yO = yOf(o / 100), yC = yOf(c / 100), yH = yOf(h / 100), yL = yOf(l / 100);
-				const top = Math.min(yO, yC), bh = Math.max(2, Math.abs(yC - yO));
-				candleG.moveTo(cxp, yH).lineTo(cxp, yL).stroke({ width: 1.5, color: col, alpha: 0.95 });
-				candleG.roundRect(bx, top, CWD, bh, 2).fill(col);
-			};
-			for (let i = 0; i < cur; i++) dc(i, completed[i][0], completed[i][1], completed[i][2], completed[i][3]);
-			if (live) dc(cur, live.open, live.high, live.low, live.price);
-
-			dotG.clear();
-			const price = live ? live.price : (cur ? completed[cur - 1][3] : 100);
-			const py = yOf(price / 100);
-			dotG.circle(xLast + CWD / 2, py, 4.5).fill({ color: CYAN, alpha: 0.22 });
-			dotG.circle(xLast + CWD / 2, py, 2.4).fill(CYAN);
-			const mm = price / 100;
-			num.text = `${mm.toFixed(2)}×`;
-		};
-
-		sfx.winPulse?.();
-		await this.tween(140, outCubic, (v) => { panel.alpha = v; });
-
-		// play the mini run candle-by-candle
-		const seq = this.genMiniRun(peak);
-		for (let k = 0; k < seq.length; k++) {
-			const [o, h, l, c] = seq[k];
-			const pts = tickPath(o, h, l, c, false, Math.random);
-			live = { open: o, high: o, low: o, price: o };
-			let tk = 0;
-			await this.tween(135, (t) => t, (v) => {
-				const segs = pts.length - 1, ft = v * segs, si = Math.min(segs - 1, Math.floor(ft));
-				const price = pts[si] + (pts[si + 1] - pts[si]) * smoothStep(ft - si);
-				live!.price = price;
-				live!.high = Math.max(live!.high, price);
-				live!.low = Math.min(live!.low, price);
-				draw();
-				if (performance.now() - tk > 60) { sfx.candleTick?.(); tk = performance.now(); }
-			});
-			completed.push([o, h, l, c]);
-			live = null; draw();
-		}
-
-		// settle: stamp the awarded value, pop the tile's own candle, burst
-		num.text = jackpot ? 'JACKPOT' : fmtMult(info.mult);
-		num.style.fontSize = jackpot ? 16 : 22; num.style.fill = bigCol;
-		if (jackpot) {
-			st.label.text = 'JACKPOT'; st.label.style.fontSize = 15; st.label.style.fill = 0xffffff;
-			this.burst(cx, cyc, GOLD, 18, ov);
-			sfx.win();
-		} else {
-			st.mult = info.mult; st.masked = false;
-			st.label.text = fmtMult(info.mult); st.label.style.fontSize = 22; st.label.style.fill = GOLD;
-			this.burst(cx, cyc, up ? GOLD : GREEN, 10, ov);
-		}
-		await this.tween(380, outBack, (v) => {
-			st.osc = Math.max(0, Math.min(1, v));
-			sp.scale.set(1 + Math.sin(Math.min(1, v) * Math.PI) * 0.22);
-			num.scale.set(1 + Math.sin(Math.min(1, v) * Math.PI) * 0.18);
-			this.drawLiveCandle(sp);
-		});
-		sp.scale.set(1);
-		await sleep(260);
-		await this.tween(240, inCubic, (v) => { panel.alpha = 1 - v; });
-		panel.destroy({ children: true });
-	}
-
-	/** Short, mostly-green OHLC run that climbs from 1.00× to the target peak and lands
-	 * UP on it (no rug) — the compact trade animation for a mystery-candle reveal. */
-	private genMiniRun(peakX: number): number[][] {
-		const target = Math.round(Math.max(1.3, peakX) * 100);
-		const n = 6;
-		const bw = (i: number) => Math.pow(i / (n - 1), 1.7);  // back-loaded climb
-		let sumBW = 0; for (let i = 0; i < n; i++) sumBW += bw(i);
-		const drift = Math.log(target / 100);
-		const candles: number[][] = [];
-		let price = 100;
-		for (let i = 0; i < n; i++) {
-			const open = price;
-			const jitter = (Math.random() - 0.38) * 0.05;       // light chop, biased up
-			const logRet = jitter + drift * (bw(i) / sumBW);
-			let close = Math.max(72, Math.round(open * Math.exp(logRet)));
-			const spread = Math.max(2, Math.abs(close - open));
-			const high = Math.max(open, close) + Math.round(spread * Math.random() * 0.5);
-			const low = Math.max(55, Math.min(open, close) - Math.round(spread * Math.random() * 0.4));
-			candles.push([open, high, low, close]);
-			price = close;
-		}
-		candles[n - 1][3] = target;                            // land exactly on the peak
-		candles[n - 1][1] = Math.max(candles[n - 1][1], target);
-		return candles;
-	}
 
 	// ---------- tween/particle core ----------
 	private tween(dur: number, ease: Ease, apply: (v: number) => void): Promise<void> {
@@ -828,9 +663,17 @@ export class SlotBoard {
 		if (result.vaultPrizes.length > 0) {
 			await this.vaultUnlock(result);
 		}
-		// MYSTERY CANDLES: reveal each hidden multiplier and collect the prize
-		if (result.candleReveal.length > 0) {
-			await this.revealCandles(result);
+		// MYSTERY CANDLES: the FULL god-candle price-action takeover is the spin's finale.
+		// Every candle on the board merges into ONE combined run that settles on the summed
+		// multiplier (pumps, then rugs/holds to the value). A spin that hit the mystery
+		// jackpot moons instead — App.svelte fires that run after this returns.
+		if (result.candleReveal.length > 0 && !result.mysteryJackpot) {
+			const settleX = result.candleReveal.reduce((a, c) => a + Math.max(0, c.mult), 0);
+			if (settleX > 0) {
+				await this.playGodCandleRun(result.betMicro, settleX);
+				await this.primeIdle(displayGrid());   // rebuild the board after the run
+				return;                                  // the run ends the spin presentation
+			}
 		}
 
 		const betX = result.totalWinMicro / result.betMicro;
@@ -1322,11 +1165,15 @@ export class SlotBoard {
 	 * open/close), then BOOMS up through the board, shattering the tiles above it,
 	 * while a rugs.fun-style multiplier climbs toward a peak (moon) or rugs.
 	 * Returns the jackpot win = round(peakX * bet). Pure presentation. */
-	async godCandleJackpot(betMicro: number, peakX: number): Promise<number> {
+	/** The FULL god-candle price-action takeover: darken, title, shatter the board, run
+	 * the live candlestick chart, settle on `settleX` (the banked multiple), pay out.
+	 * EVERY mystery candle uses this — small reveals pump then rug to the value, the
+	 * mystery jackpot moons. Returns the win in micros (bet × settleX). */
+	async playGodCandleRun(betMicro: number, settleX: number): Promise<number> {
 		this.idleOn = false;
 		const ov = this.overlayLayer;
 		const centreX = LW / 2;
-		const moon = peakX >= 50;
+		const moon = settleX >= 50;
 
 		// darken the board
 		const veil = new Graphics();
@@ -1429,14 +1276,15 @@ export class SlotBoard {
 			bigMult.style.fill = live ? 0xffffff : (moon ? GOLD : GREEN);
 		};
 
-		// generate the price run and play it candle-by-candle
-		const seq = this.genPriceRun(peakX);
+		// generate the price run and play it candle-by-candle. pace scales with size:
+		// a common small reveal is a tight version of the SAME sequence, the moon is epic.
+		const seq = this.genGodRun(settleX);
+		const formMs = moon ? 760 : settleX >= 5 ? 620 : 460;
 		for (let k = 0; k < seq.length; k++) {
 			const [o, h, l, c] = seq[k];
 			const isRugC = c < o * 0.5;
 			const pts = tickPath(o, h, l, c, isRugC, Math.random);
 			live = { open: o, high: o, low: o, price: o };
-			const formMs = 760;   // match the original crash game's 800ms candle pace
 			let tk = 0;
 			await this.tween(formMs, (t) => t, (v) => {
 				const segs = pts.length - 1, ft = v * segs, si = Math.min(segs - 1, Math.floor(ft));
@@ -1462,7 +1310,7 @@ export class SlotBoard {
 		sfx.win();
 
 		const tag = new Text({
-			text: moon ? 'MOON!' : 'JACKPOT', style: {
+			text: moon ? 'MOON!' : settleX >= 10 ? 'JACKPOT' : 'GOD CANDLE', style: {
 				fontFamily: 'DynaPuff', fontSize: 40, fontWeight: '700', fill: moon ? GOLD : GREEN,
 				stroke: { color: 0x05351b, width: 8 },
 			},
@@ -1471,7 +1319,7 @@ export class SlotBoard {
 		ov.addChild(tag);
 		await this.tween(400, outBack, (v) => tag.scale.set(v));
 
-		const winMicro = Math.round(betMicro * peakX);
+		const winMicro = Math.round(betMicro * settleX);
 		const payout = new Text({
 			text: fmtMoney(winMicro), style: {
 				fontFamily: 'DynaPuff', fontSize: 52, fontWeight: '700', fill: 0xffffff,
@@ -1481,7 +1329,7 @@ export class SlotBoard {
 		payout.anchor.set(0.5); payout.x = centreX; payout.y = FRAME + BOARD_H / 2 + 28; payout.alpha = 0;
 		ov.addChild(payout);
 		await this.tween(520, outCubic, (v) => { payout.alpha = v; payout.text = fmtMoney(Math.round(winMicro * v)); });
-		await sleep(1700);
+		await sleep(moon ? 1700 : settleX >= 2 ? 1250 : 950);
 
 		const parts: { alpha: number }[] = [veil, title, bigMult, chip, gridG, candleG, pulseG, tag, payout];
 		await this.tween(320, inCubic, (v) => { for (const p of parts) p.alpha = (p === veil ? 0.94 : 1) * (1 - v); });
@@ -1493,6 +1341,56 @@ export class SlotBoard {
 		}
 		this.firstSpin = true;
 		return winMicro;
+	}
+
+	/** The mystery JACKPOT entry (a candle that mooned): the full run to a big peak. */
+	async godCandleJackpot(betMicro: number, peakX: number): Promise<number> {
+		return this.playGodCandleRun(betMicro, peakX);
+	}
+
+	/** OHLC run (hundredths of 1.00x) for a god-candle reveal that SETTLES on settleX.
+	 * Small reveals (< 2.5x) pump past the value then RUG back down to it (the degen
+	 * pump-and-dump); bigger reveals climb straight to it. The last close is exactly the
+	 * banked multiple, so the headline number lands on what you win. */
+	private genGodRun(settleX: number): number[][] {
+		const target = Math.max(5, Math.round(settleX * 100));   // final close, floor 0.05x
+		const moon = settleX >= 50;
+		const overshoot = settleX < 2.5;
+		// visual peak the chart pumps to before (maybe) rugging back to the settle value
+		const peakV = moon ? target
+			: overshoot ? Math.max(target + 40, Math.round(170 + Math.random() * 250))
+			: target;
+		// candle count scales with magnitude: quick for small, epic for the moon
+		const n = Math.min(16, Math.max(6, Math.round(6 + Math.log(Math.max(1, peakV / 100)) * 2.6)));
+		const climbN = overshoot ? Math.max(4, n - 1) : n;        // reserve the last candle for the rug
+
+		const bw = (i: number) => Math.pow(i / Math.max(1, climbN - 1), 2.4); // back-loaded boom
+		let sumBW = 0; for (let i = 0; i < climbN; i++) sumBW += bw(i);
+		const drift = Math.log(peakV / 100);
+		const candles: number[][] = [];
+		let price = 100;
+		for (let i = 0; i < climbN; i++) {
+			const open = price;
+			const chop = (Math.random() - 0.4) * 0.06;            // light chop, biased up
+			const logRet = chop + drift * (bw(i) / sumBW);
+			const close = Math.max(40, Math.round(open * Math.exp(logRet)));
+			const spread = Math.max(2, Math.abs(close - open));
+			const high = Math.max(open, close) + Math.round(spread * Math.random() * 0.5);
+			const low = Math.max(30, Math.min(open, close) - Math.round(spread * Math.random() * 0.4));
+			candles.push([open, high, low, close]);
+			price = close;
+		}
+		if (overshoot) {
+			// THE RUG: dump from the pump high down to the settle value
+			const open = price;
+			const close = target;
+			candles.push([open, open + 5, Math.min(close, open) - 2, close]);
+		} else {
+			const last = candles[candles.length - 1];
+			last[3] = target;                                      // land exactly on the value
+			last[1] = Math.max(last[1], target);
+		}
+		return candles;
 	}
 
 	/** Build a REALISTIC OHLC price run (hundredths of 1.00x) to peakX. Each candle
