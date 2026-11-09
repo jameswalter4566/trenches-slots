@@ -24,8 +24,8 @@ function simFreeSpins(bet: number): number {
 }
 
 let wagered = 0, returned = 0, hits = 0, maxWin = 0;
-let baseRet = 0, fsRet = 0, jpRet = 0, gunRet = 0, candleRet = 0;
-let fsHits = 0, jpHits = 0, gunHits = 0, candleHits = 0, bearHits = 0;
+let baseRet = 0, fsRet = 0, jpRet = 0, gunRet = 0, candleRet = 0, vaultRet = 0, payRet = 0;
+let fsHits = 0, jpHits = 0, gunHits = 0, candleHits = 0, bearHits = 0, payHits = 0, vaultHits = 0;
 
 for (let i = 0; i < N; i++) {
 	wagered += BET;
@@ -34,6 +34,10 @@ for (let i = 0; i < N; i++) {
 	baseRet += r.totalWinMicro;
 	gunRet += r.moneygunWinMicro; if (r.moneygunWinMicro > 0) gunHits++;
 	candleRet += r.candlePrizeMicro; if (r.candleReveal.length > 0) candleHits++;
+	vaultRet += r.vaultWinMicro; if (r.vaultWinMicro > 0) vaultHits++;
+	// net line+scatter pay after the bear penalty (what the tumble actually pays)
+	const pay = r.totalWinMicro - r.moneygunWinMicro - r.vaultWinMicro - r.candlePrizeMicro;
+	payRet += pay; if (pay > 0) payHits++;
 	if (r.bearCount > 0 && r.grossWinMicro > 0) bearHits++;
 	if (r.mysteryJackpot) {
 		const jp = Math.round(BET * godCandlePeak());
@@ -53,8 +57,10 @@ console.log(`  RTP          ${pct(returned)}`);
 console.log(`  hit rate     ${(hits / N * 100).toFixed(1)}%`);
 console.log(`  max win      ${(maxWin / BET).toFixed(0)}x\n`);
 console.log(`  contribution by feature (of total wagered):`);
-console.log(`    base spin      ${pct(baseRet)}   (pay+gun+candle, hit ${(hits / N * 100).toFixed(1)}%)`);
+console.log(`    base spin      ${pct(baseRet)}   (pay+gun+candle+vault, hit ${(hits / N * 100).toFixed(1)}%)`);
+console.log(`    LINE PAY       ${pct(payRet)}   (${(payHits / N * 100).toFixed(1)}% of spins)  <- bull/rocket/goldbar/etc`);
 console.log(`    money gun      ${pct(gunRet)}   (${(gunHits / N * 100).toFixed(1)}% of spins)`);
+console.log(`    vault          ${pct(vaultRet)}   (${(vaultHits / N * 100).toFixed(2)}% of spins)`);
 console.log(`    mystery candle ${pct(candleRet)}   (${(candleHits / N * 100).toFixed(1)}% of spins)`);
 console.log(`    free spins     ${pct(fsRet)}   (${(fsHits / N * 100).toFixed(2)}% of spins)`);
 console.log(`    jackpot        ${pct(jpRet)}   (${(jpHits / N * 100).toFixed(3)}% of spins)`);

@@ -6,7 +6,7 @@
 
 import {
 	COLS, ROWS, PAYS, WEIGHTS, ORB_VALUES, SCATTER_PAY, BEAR_FACTOR_PER, MONEYGUN_PRIZES, VAULT_PRIZES,
-	MYSTERY_MULTS, MYSTERY_JACKPOT_CHANCE, payTier,
+	MYSTERY_MULTS, MYSTERY_JACKPOT_CHANCE, FS_MULT_CAP, payTier,
 	type Cell, type SymbolId, type PayingSymbol,
 } from './paytable';
 
@@ -238,7 +238,9 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 		const cols = [0, 1, 2, 3, 4, 5].sort(() => Math.random() - 0.5).slice(0, 4);
 		for (const c of cols) {
 			const r = Math.floor(Math.random() * ROWS);
-			grid[c][r] = { sym: 'scatter' };
+			// planted scatters get real mystery values too (so bonus-buy candles reveal
+			// multipliers with the trade animation, just like a natural 4-scatter spin)
+			grid[c][r] = { sym: 'scatter', mystery: drawMystery(), masked: Math.random() < 0.5 };
 		}
 		for (const n of initial) n.cell = grid[n.col][n.row];
 	}
@@ -286,7 +288,8 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 	let appliedMult = 0;
 	let tumbleWin = baseWin;
 	if (opts.freeSpin && baseWin > 0 && orbTotal > 0) {
-		appliedMult = (opts.fsTotalMult ?? 0) + orbTotal;
+		// accumulate across the session, but cap so a hot orb run can't run away
+		appliedMult = Math.min(FS_MULT_CAP, (opts.fsTotalMult ?? 0) + orbTotal);
 		tumbleWin = Math.round(baseWin * appliedMult);
 	}
 	const scatterWin =
@@ -342,6 +345,6 @@ export function spin(betMicro: number, opts: SpinOptions = {}): SpinResult {
 		mysteryJackpot,
 		totalWinMicro: netPayWin + moneygunWin + vaultWin + candlePrize,
 		triggersFreeSpins: !opts.freeSpin && scatterCount >= 4,
-		retrigger: !!opts.freeSpin && scatterCount >= 3,
+		retrigger: !!opts.freeSpin && scatterCount >= 4,
 	};
 }
