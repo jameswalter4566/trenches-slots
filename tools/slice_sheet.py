@@ -219,15 +219,15 @@ def main() -> None:
     anchors = [s[0] for s in stats]
     counts = [s[1] for s in stats]
 
-    # TRIM the fly-away tail: AI motion sheets often launch the subject off the
-    # cell in the final frames. For a slot tile the symbol must stay put, so drop
-    # trailing frames where the body has either (a) mostly left (< 45% of peak
-    # body pixels) or (b) DRIFTED too far from its home position (> 16% of the
-    # cell) — this catches a subject that is tilting/sliding out of frame while
-    # still largely visible. Keeps the in-place lead-in intact.
+    # TRIM so the symbol stays SEATED in its tile. Drop trailing frames where the
+    # body has either (a) mostly left (< 45% of peak body pixels) or (b) drifted
+    # more than ~7% of the frame from its home position. A tight drift cap is what
+    # keeps a launching/jumping symbol from rising up out of its slot and
+    # overlapping the tile stacked above it — the ignition/effect still plays, the
+    # body just doesn't travel.
     peak = max(counts) if counts else 0
     home = next((a for a in anchors if a), None)
-    drift_max = 0.16 * min(fw, fh)
+    drift_max = 0.045 * min(fw, fh)
     if do_trim and peak and home:
         def gone(i: int) -> bool:
             if counts[i] < 0.45 * peak:
