@@ -1,0 +1,196 @@
+{
+  "fps": 24,
+  "durationMs": 1125,
+  "loop": true,
+  "frames": [
+    {
+      "frame": 1,
+      "breath": 0.0,
+      "headAngleDegrees": 0.0,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": 0.0
+    },
+    {
+      "frame": 2,
+      "breath": 0.230616,
+      "headAngleDegrees": 0.126839,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": 1.615677
+    },
+    {
+      "frame": 3,
+      "breath": 0.448799,
+      "headAngleDegrees": 0.24684,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": 2.887643
+    },
+    {
+      "frame": 4,
+      "breath": 0.642788,
+      "headAngleDegrees": 0.353533,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": 3.545308
+    },
+    {
+      "frame": 5,
+      "breath": 0.802123,
+      "headAngleDegrees": 0.441168,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": 3.448762
+    },
+    {
+      "frame": 6,
+      "breath": 0.918216,
+      "headAngleDegrees": 0.505019,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": 2.618545
+    },
+    {
+      "frame": 7,
+      "breath": 0.984808,
+      "headAngleDegrees": 0.541644,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": 1.231273
+    },
+    {
+      "frame": 8,
+      "breath": 0.998308,
+      "headAngleDegrees": 0.549069,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -0.417934
+    },
+    {
+      "frame": 9,
+      "breath": 0.95799,
+      "headAngleDegrees": 0.526894,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -1.978232
+    },
+    {
+      "frame": 10,
+      "breath": 0.866025,
+      "headAngleDegrees": 0.476314,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -3.117691
+    },
+    {
+      "frame": 11,
+      "breath": 0.727374,
+      "headAngleDegrees": 0.400056,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -3.593909
+    },
+    {
+      "frame": 12,
+      "breath": 0.549509,
+      "headAngleDegrees": 0.30223,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -3.305578
+    },
+    {
+      "frame": 13,
+      "breath": 0.34202,
+      "headAngleDegrees": 0.188111,
+      "frontHoofLiftPx": 0.001881,
+      "tailSwingPx": -2.314035
+    },
+    {
+      "frame": 14,
+      "breath": 0.116093,
+      "headAngleDegrees": 0.063851,
+      "frontHoofLiftPx": 0.26389,
+      "tailSwingPx": -0.830217
+    },
+    {
+      "frame": 15,
+      "breath": -0.116093,
+      "headAngleDegrees": -0.063851,
+      "frontHoofLiftPx": 1.701262,
+      "tailSwingPx": 0.830217
+    },
+    {
+      "frame": 16,
+      "breath": -0.34202,
+      "headAngleDegrees": -0.188111,
+      "frontHoofLiftPx": 4.239888,
+      "tailSwingPx": 2.314035
+    },
+    {
+      "frame": 17,
+      "breath": -0.549509,
+      "headAngleDegrees": -0.30223,
+      "frontHoofLiftPx": 5.944004,
+      "tailSwingPx": 3.305578
+    },
+    {
+      "frame": 18,
+      "breath": -0.727374,
+      "headAngleDegrees": -0.400056,
+      "frontHoofLiftPx": 5.154863,
+      "tailSwingPx": 3.593909
+    },
+    {
+      "frame": 19,
+      "breath": -0.866025,
+      "headAngleDegrees": -0.476314,
+      "frontHoofLiftPx": 2.662754,
+      "tailSwingPx": 3.117691
+    },
+    {
+      "frame": 20,
+      "breath": -0.95799,
+      "headAngleDegrees": -0.526894,
+      "frontHoofLiftPx": 0.655774,
+      "tailSwingPx": 1.978232
+    },
+    {
+      "frame": 21,
+      "breath": -0.998308,
+      "headAngleDegrees": -0.549069,
+      "frontHoofLiftPx": 0.030526,
+      "tailSwingPx": 0.417934
+    },
+    {
+      "frame": 22,
+      "breath": -0.984808,
+      "headAngleDegrees": -0.541644,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -1.231273
+    },
+    {
+      "frame": 23,
+      "breath": -0.918216,
+      "headAngleDegrees": -0.505019,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -2.618545
+    },
+    {
+      "frame": 24,
+      "breath": -0.802123,
+      "headAngleDegrees": -0.441168,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -3.448762
+    },
+    {
+      "frame": 25,
+      "breath": -0.642788,
+      "headAngleDegrees": -0.353533,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -3.545308
+    },
+    {
+      "frame": 26,
+      "breath": -0.448799,
+      "headAngleDegrees": -0.24684,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -2.887643
+    },
+    {
+      "frame": 27,
+      "breath": -0.230616,
+      "headAngleDegrees": -0.126839,
+      "frontHoofLiftPx": 0.0,
+      "tailSwingPx": -1.615677
+    }
+  ]
+}
