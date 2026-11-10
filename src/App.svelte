@@ -275,17 +275,19 @@
 		cursor: pointer;
 	}
 	.board { flex: 1; min-height: 0; }
-	/* FLOOR TRADER mascot — stands in the left gutter beside the centered board */
+	/* FLOOR TRADER mascot — stands tall in the right gutter beside the centered board,
+	   flipped to face the screen */
 	.mascot {
 		position: absolute;
-		left: clamp(6px, 2vw, 56px);
-		bottom: 92px;
-		width: clamp(150px, 16vw, 300px);
+		right: clamp(0px, 1vw, 40px);
+		bottom: 170px;
+		width: clamp(300px, 34vw, 560px);
 		height: auto;
+		transform: scaleX(-1);
 		pointer-events: none;
 		user-select: none;
 		z-index: 2;
-		filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.55));
+		filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.55));
 	}
 	/* on narrow screens the board fills the width — hide the mascot so it never overlaps */
 	@media (max-width: 1024px) {
