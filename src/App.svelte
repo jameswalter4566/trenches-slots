@@ -160,6 +160,19 @@
 
 	<div class="board" bind:this={boardEl}></div>
 
+	<!-- FLOOR TRADER mascot: transparent idle loop beside the arcade screen -->
+	<video
+		class="mascot"
+		autoplay
+		loop
+		muted
+		playsinline
+		poster="/mascot/floor_trader_poster.png"
+		aria-hidden="true"
+	>
+		<source src="/mascot/floor_trader.webm" type="video/webm" />
+	</video>
+
 	<footer>
 		<div class="readout">
 			<span class="readout-label">BALANCE</span>
@@ -262,6 +275,22 @@
 		cursor: pointer;
 	}
 	.board { flex: 1; min-height: 0; }
+	/* FLOOR TRADER mascot — stands in the left gutter beside the centered board */
+	.mascot {
+		position: absolute;
+		left: clamp(6px, 2vw, 56px);
+		bottom: 92px;
+		width: clamp(150px, 16vw, 300px);
+		height: auto;
+		pointer-events: none;
+		user-select: none;
+		z-index: 2;
+		filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.55));
+	}
+	/* on narrow screens the board fills the width — hide the mascot so it never overlaps */
+	@media (max-width: 1024px) {
+		.mascot { display: none; }
+	}
 	footer {
 		display: flex;
 		align-items: center;
