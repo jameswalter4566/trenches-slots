@@ -228,7 +228,26 @@
 		display: flex;
 		flex-direction: column;
 		position: relative;
+		overflow: hidden;
 	}
+	/* Wall Street office scene behind everything; a subtle vignette keeps the
+	   floating reel screen readable */
+	.shell::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: url('/office_bg.png') center/cover no-repeat;
+		z-index: 0;
+	}
+	.shell::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(ellipse at 42% 42%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.35) 100%);
+		z-index: 0;
+		pointer-events: none;
+	}
+	header, .board, footer { position: relative; z-index: 1; }
 	header {
 		display: flex;
 		align-items: center;
@@ -273,7 +292,13 @@
 		padding: 8px 12px;
 		cursor: pointer;
 	}
-	.board { flex: 1; min-height: 0; }
+	/* reel board floats in front of the office scene like a screen on the desk */
+	.board {
+		flex: 1;
+		min-height: 0;
+		margin: 0 auto;
+		width: min(58vw, 900px);
+	}
 	/* STOCK BROKER mascot — full-res VP9-alpha video, stands tall in the right
 	   gutter beside the centered board */
 	.mascot {
@@ -296,7 +321,13 @@
 		align-items: center;
 		justify-content: center;
 		gap: 18px;
-		padding: 10px 22px 20px;
+		padding: 12px 22px 18px;
+		margin: 0 auto 10px;
+		background: rgba(10, 12, 17, 0.62);
+		backdrop-filter: blur(6px);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 18px;
+		width: fit-content;
 	}
 	.readout {
 		display: flex;
