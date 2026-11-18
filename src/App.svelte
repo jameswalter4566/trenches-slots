@@ -299,14 +299,14 @@
 		margin: 0 auto;
 		width: min(58vw, 900px);
 	}
-	/* STOCK BROKER mascot — full-res VP9-alpha video, stands tall in the right
-	   gutter beside the centered board */
+	/* STANDING BROKER mascot — portrait (384x1024) VP9-alpha idle; sized by
+	   height so he stands on the office floor beside the reel screen */
 	.mascot {
 		position: absolute;
-		right: clamp(0px, 1vw, 40px);
-		bottom: 170px;
-		width: clamp(300px, 34vw, 560px);
-		height: auto;
+		right: clamp(-20px, 2vw, 60px);
+		bottom: 0;
+		height: clamp(440px, 92vh, 960px);
+		width: auto;
 		pointer-events: none;
 		user-select: none;
 		z-index: 2;
