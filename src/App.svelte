@@ -18,7 +18,6 @@
 
 	let boardEl: HTMLDivElement;
 	let board: SlotBoard | null = null;
-	let mascotEl: HTMLDivElement;
 
 	let balance = $state(1000_000000);
 	let betIndex = $state(3); // $1.00
@@ -39,20 +38,6 @@
 	const canBuy = $derived(!spinning && !fsActive && balance >= bonusCost);
 
 	onMount(async () => {
-		// STOCK BROKER mascot: cycle the 420-frame sprite (21 cols x 20 rows) at 30fps
-		const B_COLS = 21, B_ROWS = 20, B_FRAMES = 420, B_FPS = 30;
-		let bFrame = 0, bLast = 0, bRaf = 0;
-		const brokerTick = (t: number) => {
-			bRaf = requestAnimationFrame(brokerTick);
-			if (!mascotEl || t - bLast < 1000 / B_FPS) return;
-			bLast = t;
-			bFrame = (bFrame + 1) % B_FRAMES;
-			const col = bFrame % B_COLS, row = (bFrame / B_COLS) | 0;
-			mascotEl.style.backgroundPosition =
-				(col / (B_COLS - 1) * 100) + '% ' + (row / (B_ROWS - 1) * 100) + '%';
-		};
-		bRaf = requestAnimationFrame(brokerTick);
-
 		await document.fonts.load('700 20px DynaPuff');
 		board = new SlotBoard();
 		await board.init(boardEl);
@@ -175,8 +160,17 @@
 
 	<div class="board" bind:this={boardEl}></div>
 
-	<!-- STOCK BROKER mascot: 420-frame sprite loop (21x20 grid) beside the arcade screen -->
-	<div class="mascot" bind:this={mascotEl} aria-hidden="true"></div>
+	<!-- STOCK BROKER mascot: full-res VP9-alpha loop beside the arcade screen -->
+	<video
+		class="mascot"
+		autoplay
+		loop
+		muted
+		playsinline
+		aria-hidden="true"
+	>
+		<source src="/mascot/broker.webm" type="video/webm" />
+	</video>
 
 	<footer>
 		<div class="readout">
@@ -280,18 +274,14 @@
 		cursor: pointer;
 	}
 	.board { flex: 1; min-height: 0; }
-	/* STOCK BROKER mascot — 420-frame sprite (21 cols x 20 rows), stands tall in the
-	   right gutter beside the centered board; JS cycles background-position */
+	/* STOCK BROKER mascot — full-res VP9-alpha video, stands tall in the right
+	   gutter beside the centered board */
 	.mascot {
 		position: absolute;
 		right: clamp(0px, 1vw, 40px);
 		bottom: 170px;
 		width: clamp(300px, 34vw, 560px);
-		aspect-ratio: 1;
-		background-image: url('/mascot/broker.png');
-		background-size: 2100% 2000%;
-		background-repeat: no-repeat;
-		background-position: 0% 0%;
+		height: auto;
 		pointer-events: none;
 		user-select: none;
 		z-index: 2;
