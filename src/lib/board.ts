@@ -41,7 +41,7 @@ const outBounce: Ease = (x) => {
 interface Tween { t: number; dur: number; ease: Ease; apply: (v: number) => void; resolve: () => void }
 
 interface LiveCandle { g: Graphics; label: Text; mult: number; masked: boolean; phase: number; osc: number; revealing?: boolean }
-type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean; mc?: LiveCandle };
+type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean; mc?: LiveCandle; candleSprite?: AnimatedSprite };
 
 /** Format a mystery multiplier for the tile label (0.15× / 1× / 25×). */
 function fmtMult(v: number): string {
@@ -328,9 +328,18 @@ export class SlotBoard {
 				},
 			});
 			label.anchor.set(0.5); label.y = 44;
-			c.addChild(g, label);
 			c.mc = { g, label, mult, masked, phase: Math.random() * 2600, osc: 0 };
-			this.drawLiveCandle(c);
+			// tile ICON: the new animated candlestick sprite (loops — the candle is
+			// alive). The big GOD CANDLE jackpot (playGodCandleRun) is untouched.
+			const candleSheet = this.anims.get('scatter_idle');
+			if (candleSheet) {
+				const cand = this.sheetSprite(candleSheet, 108);
+				c.addChild(cand, label);
+				c.candleSprite = cand;
+			} else {
+				c.addChild(g, label);
+				this.drawLiveCandle(c);
+			}
 			return c;
 		}
 		if (idleSheet) {
@@ -525,7 +534,7 @@ export class SlotBoard {
 		// live scatter candlesticks fluctuate continuously (even mid-spin)
 		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
 			const sp = this.sprites[c][r];
-			if (sp?.mc) this.animLiveCandle(sp, dt);
+			if (sp?.mc && !sp.candleSprite) this.animLiveCandle(sp, dt); // sprite icon self-animates
 		}
 		if (this.idleOn) {
 			// per-symbol idle motion, phase-offset per cell — alive, never lockstep
