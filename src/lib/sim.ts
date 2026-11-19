@@ -93,6 +93,17 @@ function drawSymbol(noScatter: boolean): Cell {
 	}
 }
 
+/** A plain refill symbol (no scatter/orb/bear/feature) — used for cosmetic board
+ * refills like the bear-bomb cascade, where new tiles drop in but must not retrigger
+ * features or affect the already-settled result. */
+export function fillerCell(): Cell {
+	for (;;) {
+		const c = drawSymbol(true);
+		if (c.sym === 'orb' || c.sym === 'bear' || c.sym === 'scatter' || c.sym === 'moneygun' || c.sym === 'vault') continue;
+		return c;
+	}
+}
+
 function drawOrbValue(): number {
 	let r = Math.random() * ORB_TOTAL;
 	for (const [v, w] of ORB_VALUES) {

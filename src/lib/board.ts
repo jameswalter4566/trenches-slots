@@ -6,7 +6,7 @@
 import { AnimatedSprite, Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { COLS, ROWS, SYMBOL_META, COIN_COLORS, type Cell, type SymbolId } from './paytable';
 import type { SpinResult, TumbleStep } from './sim';
-import { displayGrid } from './sim';
+import { displayGrid, fillerCell } from './sim';
 import { fmtMoney } from './session';
 import { sfx } from './sound';
 
@@ -21,7 +21,7 @@ const BOARD_H = ROWS * CELL;
 const FRAME = 26;
 const METER_H = 74;
 const LW = BOARD_W + FRAME * 2;
-const LH = BOARD_H + FRAME * 2 + METER_H + 14;
+const LH = BOARD_H + FRAME * 2 + 10;   // just the board panel; the WIN meter moved to HTML
 
 const GREEN = 0x2be26a;
 const RED = 0xf0414d;
@@ -148,11 +148,12 @@ export class SlotBoard {
 	private idleOn = false;
 
 	onSettled?: (totalWinMicro: number) => void;
+	onMeter?: (micro: number, idle: boolean) => void;   // drives the HTML WIN container
 
 	async init(el: HTMLElement) {
 		this.app = new Application();
 		await this.app.init({
-			background: '#0c0d11',
+			backgroundAlpha: 0,                 // transparent — the office scene shows through
 			antialias: true,
 			resolution: Math.min(2, window.devicePixelRatio || 1),
 			autoDensity: true,
@@ -239,18 +240,12 @@ export class SlotBoard {
 	}
 
 	private buildMeter() {
-		const y = BOARD_H + FRAME * 2 + 14;
+		// The WIN meter is now an HTML bronze container (driven via onMeter); keep the Pixi
+		// objects for the rollup bookkeeping but never render them.
 		this.meterPlaque = new Graphics();
-		this.redrawMeter(0x171a22, 0x262b38);
-		this.meterPlaque.y = y;
-		this.meterText = new Text({
-			text: '',
-			style: { fontFamily: 'DynaPuff', fontSize: 30, fontWeight: '700', fill: 0xffffff },
-		});
-		this.meterText.anchor.set(0.5);
-		this.meterText.x = LW / 2;
-		this.meterText.y = y + METER_H / 2;
-		this.root.addChild(this.meterPlaque, this.meterText);
+		this.meterText = new Text({ text: '', style: { fontFamily: 'DynaPuff', fontSize: 30 } });
+		this.meterPlaque.visible = false;
+		this.meterText.visible = false;
 		this.setMeterIdle();
 	}
 
@@ -262,16 +257,13 @@ export class SlotBoard {
 	}
 
 	private setMeterIdle() {
-		this.meterText.text = 'PUMP IT';
-		this.meterText.style.fill = 0x7a8294;
-		this.redrawMeter(0x171a22, 0x262b38);
+		this.meterShown = 0;
+		this.onMeter?.(0, true);
 	}
 
 	private setMeterWin(micro: number) {
 		this.meterShown = micro;
-		this.meterText.text = `WIN  ${fmtMoney(micro)}`;
-		this.meterText.style.fill = 0xffffff;
-		this.redrawMeter(0x123b23, GREEN);
+		this.onMeter?.(micro, false);
 	}
 
 	private buildMultBadge() {
@@ -358,12 +350,13 @@ export class SlotBoard {
 		const idleSheet = this.anims.get(`${cell.sym}_idle`);
 
 		if (cell.sym === 'orb') {
-			if (idleSheet) {
-				content.addChild(this.sheetSprite(idleSheet, 96), this.orbLabel(cell.orb ?? 2));
-				c.sheetIdle = true;
-			} else {
-				content.addChild(tex ? this.buildTexOrb(tex, cell.orb ?? 2) : this.buildOrb(cell.orb ?? 2));
-			}
+			// multiplier orb = the SAME live god-candle animation as the scatter, with the
+			// xN multiplier printed on it (replaces the old gold-coin look).
+			const g = new Graphics();
+			const label = this.orbLabel(cell.orb ?? 2);
+			c.mc = { g, label, mult: cell.orb ?? 2, masked: true, phase: Math.random() * 2600, osc: 0 };
+			content.addChild(g, label);
+			this.drawLiveCandle(c);
 			return c;
 		}
 		if (cell.sym === 'scatter') {
@@ -448,12 +441,12 @@ export class SlotBoard {
 		const label = new Text({
 			text: `x${value}`,
 			style: {
-				fontFamily: 'DynaPuff', fontSize: 28, fontWeight: '700', fill: 0xffffff,
-				stroke: { color: 0x6b4e00, width: 6 },
+				fontFamily: 'DynaPuff', fontSize: 26, fontWeight: '700', fill: GOLD,
+				stroke: { color: 0x3a2a00, width: 6 },
 			},
 		});
 		label.anchor.set(0.5);
-		label.y = 32;
+		label.y = 42;                 // sits just below the candle foot
 		return label;
 	}
 
@@ -738,11 +731,14 @@ export class SlotBoard {
 
 	/** BEAR MARKET: every bear on the board rears up and roars (red shockwave),
 	 * then the win meter is crushed from the gross win down to the bear-reduced net. */
+	/** BEAR MARKET = a BOMB: each bear roars then detonates, blowing up the surrounding
+	 * tiles (its 8 neighbours) so they're removed; survivors then fall into place and new
+	 * tiles drop from the top. Feature tiles (gun/vault/scatter/orb) are spared so their
+	 * own features still fire. The win is still crushed to the bear-reduced amount. */
 	private async bearRoar(result: SpinResult): Promise<void> {
 		const ov = this.overlayLayer;
 		const roar = this.anims.get('bear_win');
 		sfx.rug();
-		this.shake = 420;
 
 		const veil = new Graphics();
 		veil.rect(0, 0, LW, LH).fill({ color: RED, alpha: 1 });
@@ -758,25 +754,122 @@ export class SlotBoard {
 		banner.anchor.set(0.5); banner.x = LW / 2; banner.y = FRAME + 40; banner.scale.set(0);
 		ov.addChild(banner);
 
-		// roar every bear on the board
-		const jobs: Promise<void>[] = [];
-		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
-			const sp = this.sprites[c][r];
-			if (sp?.cellData.sym !== 'bear') continue;
-			this.burst(sp.x + FRAME, sp.y + FRAME, RED, 10, ov);
-			if (roar) jobs.push(this.playSheetAt(sp, roar));
-		}
 		await this.tween(220, outCubic, (v) => { veil.alpha = v * 0.34; });
 		await this.tween(360, outBack, (v) => banner.scale.set(v));
-		await Promise.all(jobs);
+
+		// every bear + its 8-neighbour blast radius
+		const bears: { c: number; r: number }[] = [];
+		for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+			if (this.sprites[c][r]?.cellData.sym === 'bear') bears.push({ c, r });
+		}
+		// each bear ROARS in its tile, then the bomb goes off
+		await Promise.all(bears.map(({ c, r }) => {
+			const sp = this.sprites[c][r];
+			return sp && roar ? this.playSheetInContent(sp, roar, 'bear') : Promise.resolve();
+		}));
+
+		const blast = new Set<string>();
+		for (const b of bears) {
+			for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 1; dr++) {
+				const nc = b.c + dc, nr = b.r + dr;
+				if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) blast.add(`${nc},${nr}`);
+			}
+		}
+		// detonate: destroy bears + surrounding regular tiles (spare feature tiles)
+		const SPARED = new Set<SymbolId>(['orb', 'scatter', 'moneygun', 'vault']);
+		this.shake = 460;
+		sfx.explode();
+		const boom: Promise<void>[] = [];
+		for (const key of blast) {
+			const [c, r] = key.split(',').map(Number);
+			const sp = this.sprites[c][r];
+			if (!sp || SPARED.has(sp.cellData.sym)) continue;
+			this.sprites[c][r] = null;
+			this.burst(sp.x, sp.y, 0xff7a3d, 10);
+			this.burst(sp.x, sp.y, RED, 6);
+			boom.push(this.explodeTile(sp));
+		}
+		await Promise.all(boom);
+
+		// surrounding tiles fall into place + new tiles drop from the top
+		await this.refillBoard();
 
 		// crush the win: meter rolls DOWN from gross to the bear-reduced pay win
 		// (the money-gun prize is sprayed separately, afterwards, and bears can't touch it)
 		const netPay = result.totalWinMicro - result.moneygunWinMicro;
 		await this.rollupAsync(netPay, 560);
-		await sleep(650);
+		await sleep(450);
 		await this.tween(300, inCubic, (v) => { veil.alpha = 0.34 * (1 - v); banner.alpha = 1 - v; });
 		veil.destroy(); banner.destroy();
+	}
+
+	/** Play a win sheet once CLIPPED inside a cell's tile (same sizing as winExit). */
+	private async playSheetInContent(sp: CellSprite, sheet: SheetAnim, sym: SymbolId): Promise<void> {
+		for (const ch of sp.content.children) ch.visible = false;
+		const a = new AnimatedSprite(sheet.frames);
+		a.anchor.set(sheet.anchorX, sheet.anchorY);
+		a.animationSpeed = sheet.fps / 60;
+		a.loop = false;
+		const idleSheet = this.anims.get(`${sym}_idle`);
+		const tex = this.textures.get(sym);
+		const fw = a.texture.width, fh = a.texture.height;
+		if (idleSheet) a.scale.set(92 / Math.max(idleSheet.frames[0].width, idleSheet.frames[0].height));
+		else if (tex) a.scale.set(92 / Math.max(tex.width, tex.height));
+		else a.scale.set(sheet.bodyFrac ? 92 / (sheet.bodyFrac * fw) : 92 / Math.max(fw, fh));
+		sp.content.addChild(a);
+		await Promise.race([
+			new Promise<void>((resolve) => { a.onComplete = () => resolve(); a.play(); }),
+			sleep(1600),
+		]);
+		a.destroy();
+	}
+
+	/** Blow a single tile off the board (bomb pop → shrink/spin out). */
+	private async explodeTile(sp: CellSprite): Promise<void> {
+		await this.tween(220, inCubic, (v) => {
+			sp.scale.set(Math.max(0.01, 1 + 0.25 * Math.sin(v * Math.PI) - v));
+			sp.alpha = 1 - v;
+			sp.rotation = v * (Math.random() < 0.5 ? 0.5 : -0.5);
+		});
+		sp.destroy();
+	}
+
+	/** Collapse survivors to the bottom of each column and drop fresh filler tiles into
+	 * the gaps from the top (used by the bear bomb; cosmetic — no sim/money effect). */
+	private async refillBoard(): Promise<void> {
+		const jobs: Promise<void>[] = [];
+		for (let c = 0; c < COLS; c++) {
+			const kept: CellSprite[] = [];
+			for (let r = 0; r < ROWS; r++) if (this.sprites[c][r]) kept.push(this.sprites[c][r]!);
+			const need = ROWS - kept.length;
+			for (let r = 0; r < ROWS; r++) this.sprites[c][r] = null;
+			// survivors pack to the bottom
+			for (let i = 0; i < kept.length; i++) {
+				const toRow = need + i;
+				const sp = kept[i];
+				this.sprites[c][toRow] = sp;
+				const y1 = this.cy(toRow);
+				if (sp.y !== y1) { const y0 = sp.y; jobs.push(this.tween(260, outBounce, (v) => { sp.y = y0 + v * (y1 - y0); })); }
+			}
+			// new fillers drop into the empty top cells
+			for (let r = 0; r < need; r++) {
+				const sp = this.buildCellSprite(fillerCell());
+				sp.x = this.cx(c);
+				const targetY = this.cy(r);
+				const fromY = -CELL * (1.2 + (need - r));
+				sp.y = fromY;
+				this.boardLayer.addChild(sp);
+				this.sprites[c][r] = sp;
+				const delay = (need - r) * 42 + c * 18;
+				jobs.push(sleep(delay).then(() =>
+					this.tween(360, outBounce, (v) => { sp.y = fromY + v * (targetY - fromY); }).then(() => {
+						sp.scale.set(1.1, 0.84);
+						return this.tween(130, outCubic, (v) => { sp.scale.set(1.1 - 0.1 * v, 0.84 + 0.16 * v); });
+					}),
+				));
+			}
+		}
+		await Promise.all(jobs);
 	}
 
 	/** Play a one-shot sheet once over a cell (body-pinned, soft-fade like a win).
@@ -1099,7 +1192,7 @@ export class SlotBoard {
 		}
 		sfx.orbApply();
 		const meterX = LW / 2 - FRAME;
-		const meterY = BOARD_H + METER_H / 2 + 16;
+		const meterY = BOARD_H - 8;          // orbs fly to the grid's bottom edge (toward the WIN bar)
 		const jobs = targets.map(({ sp }, i) =>
 			sleep(i * 120).then(() => {
 				const x0 = sp.x, y0 = sp.y;

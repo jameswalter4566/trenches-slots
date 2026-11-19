@@ -1,5 +1,6 @@
 ﻿<script lang="ts">
 	import { onMount } from 'svelte';
+	import LedNumber from './LedNumber.svelte';
 	import { SlotBoard } from './lib/board';
 	import { displayGrid, godCandlePeak, spin, type SpinResult } from './lib/sim';
 	import { fmtMoney } from './lib/session';
@@ -18,11 +19,13 @@
 
 	let boardEl: HTMLDivElement;
 	let board: SlotBoard | null = null;
+	let signEl: HTMLImageElement;   // STOCK BROKER sign strip (frame scrolled via transform)
 
 	let balance = $state(1000_000000);
 	let betIndex = $state(3); // $1.00
 	let spinning = $state(false);
 	let lastWin = $state(0);
+	let winMicro = $state(0);   // live WIN shown in the bronze container (fed by the board meter)
 	let muted = $state(false);
 
 	let fsActive = $state(false);
@@ -40,6 +43,7 @@
 	onMount(async () => {
 		await document.fonts.load('700 20px DynaPuff');
 		board = new SlotBoard();
+		board.onMeter = (micro) => { winMicro = micro; };
 		await board.init(boardEl);
 		await board.primeIdle(displayGrid());
 		const onKey = (e: KeyboardEvent) => {
@@ -49,7 +53,27 @@
 			}
 		};
 		window.addEventListener('keydown', onKey);
-		return () => window.removeEventListener('keydown', onKey);
+
+		// STOCK BROKER sign: hold the full text still for 3s, play the scroll animation,
+		// hold still, then loop (frame 0 and the last frame both show the full text).
+		const SIGN_FRAMES = 48, SIGN_FW = 336, SIGN_FPS = 24, SIGN_HOLD0 = 3000, SIGN_HOLD_END = 700;
+		let signPhase: 'hold' | 'play' | 'end' = 'hold';
+		let signT0 = performance.now();
+		let signRaf = 0;
+		const signTick = (now: number) => {
+			const dt = now - signT0;
+			let f: number;
+			if (signPhase === 'hold') { f = 0; if (dt >= SIGN_HOLD0) { signPhase = 'play'; signT0 = now; } }
+			else if (signPhase === 'play') {
+				f = Math.floor((dt / 1000) * SIGN_FPS);
+				if (f >= SIGN_FRAMES - 1) { f = SIGN_FRAMES - 1; signPhase = 'end'; signT0 = now; }
+			} else { f = SIGN_FRAMES - 1; if (dt >= SIGN_HOLD_END) { signPhase = 'hold'; signT0 = now; } }
+			if (signEl) signEl.style.transform = `translateX(${-f * SIGN_FW}px)`;
+			signRaf = requestAnimationFrame(signTick);
+		};
+		signRaf = requestAnimationFrame(signTick);
+
+		return () => { window.removeEventListener('keydown', onKey); cancelAnimationFrame(signRaf); };
 	});
 
 	async function doSpin() {
@@ -145,9 +169,8 @@
 
 <div class="shell">
 	<header>
-		<div class="logo">
-			<span class="logo-main">GOD CANDLE</span>
-			<span class="logo-sub">TRENCHES SLOTS · PROTOTYPE</span>
+		<div class="sign">
+			<img class="sign-strip" src="/broker_logo.png" bind:this={signEl} alt="STOCK BROKER" />
 		</div>
 		{#if fsActive && !fsIntro && !fsSummary}
 			<div class="fs-hud">
@@ -159,6 +182,16 @@
 	</header>
 
 	<div class="board" bind:this={boardEl}></div>
+
+	<!-- WIN container (bronze strip) — replaces the old PUMP IT meter below the grid -->
+	<div class="win-bar">
+		<span class="win-word">WIN</span>
+		{#if winMicro > 0}
+			<LedNumber text={fmtMoney(winMicro)} color="white" height={32} />
+		{:else}
+			<span class="win-dash">—</span>
+		{/if}
+	</div>
 
 	<!-- STOCK BROKER mascot: full-res VP9-alpha loop beside the arcade screen -->
 	<video
@@ -175,31 +208,26 @@
 	<footer>
 		<div class="readout">
 			<span class="readout-label">BALANCE</span>
-			<span class="readout-value">{fmtMoney(balance)}</span>
+			<LedNumber text={fmtMoney(balance)} color="white" height={22} />
 		</div>
 
 		<div class="bet">
 			<button class="bet-step" onclick={() => stepBet(-1)} disabled={spinning || fsActive || betIndex === 0}>−</button>
 			<div class="readout bet-readout">
 				<span class="readout-label">BET</span>
-				<span class="readout-value">{fmtMoney(bet)}</span>
+				<LedNumber text={fmtMoney(bet)} color="white" height={22} />
 			</div>
 			<button class="bet-step" onclick={() => stepBet(1)} disabled={spinning || fsActive || betIndex === BET_LEVELS.length - 1}>+</button>
 		</div>
 
 		<button class="buy" onclick={buyBonus} disabled={!canBuy}>
 			BUY BONUS
-			<span class="buy-cost">{fmtMoney(bonusCost)}</span>
+			<LedNumber text={fmtMoney(bonusCost)} color="white" height={15} />
 		</button>
 
 		<button class="spin" onclick={doSpin} disabled={!canSpin}>
 			{spinning ? '...' : 'SPIN'}
 		</button>
-
-		<div class="readout">
-			<span class="readout-label">WIN</span>
-			<span class=”readout-value win-value”>{lastWin > 0 ? fmtMoney(lastWin) : '—'}</span>
-		</div>
 	</footer>
 
 	{#if fsIntro}
@@ -247,27 +275,28 @@
 		z-index: 0;
 		pointer-events: none;
 	}
-	header, .board, footer { position: relative; z-index: 1; }
+	header, .board, .win-bar, footer { position: relative; z-index: 1; }
 	header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: 14px 22px 6px;
 	}
-	.logo { display: flex; flex-direction: column; line-height: 1; }
-	.logo-main {
-		font-family: 'DynaPuff';
-		font-weight: 700;
-		font-size: 30px;
-		color: #2be26a;
-		letter-spacing: 0.5px;
+	/* STOCK BROKER animated LED sign — holds the full text, scrolls, holds, then loops.
+	   The strip image is taller than the window; transform:translateX shows one frame. */
+	.sign {
+		width: 336px;
+		height: 70px;
+		overflow: hidden;
+		flex: none;
+		filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
 	}
-	.logo-sub {
-		font-family: 'IBM Plex Mono';
-		font-size: 11px;
-		color: #7a8294;
-		margin-top: 4px;
-		letter-spacing: 2px;
+	.sign-strip {
+		height: 70px;
+		width: auto;
+		max-width: none;
+		display: block;
+		will-change: transform;
 	}
 	.fs-hud {
 		font-family: 'DynaPuff';
@@ -351,7 +380,27 @@
 		font-size: 20px;
 		color: #fff;
 	}
-	.win-value { color: #2be26a; }
+	/* WIN container (bronze strip) centred below the grid — replaces the PUMP IT meter */
+	.win-bar {
+		width: 370px;
+		height: 82px;
+		margin: -6px auto 2px;
+		padding: 0 38px 6px;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		background: url('/win_container.png') center / 100% 100% no-repeat;
+	}
+	.win-word {
+		font-family: 'DynaPuff';
+		font-weight: 700;
+		font-size: 18px;
+		letter-spacing: 1px;
+		color: #f0b84a;
+	}
+	.win-dash { font-family: 'DynaPuff'; font-weight: 700; font-size: 26px; color: #fff; }
 	.bet { display: flex; align-items: center; gap: 8px; }
 	.bet-readout { min-width: 110px; }
 	.bet-step {
