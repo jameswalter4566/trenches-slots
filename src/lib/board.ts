@@ -12,6 +12,10 @@ import { sfx } from './sound';
 
 const CELL = 104;
 const TILE = 94;
+const TILE_BG = 103;          // bronze tile sprite size on the board (near-full cell, thin gap)
+const TILE_INNER = 86;        // clip window inside the bronze frame — symbols/anims stay within
+const TILE_INNER_R = 13;      // inner-window corner radius (matches the frame's rounding)
+const SYM_SCALE = 0.72;       // shrink symbols so they sit on the burst with margin inside the frame
 const BOARD_W = COLS * CELL;
 const BOARD_H = ROWS * CELL;
 const FRAME = 26;
@@ -46,7 +50,7 @@ const outBounce: Ease = (x) => {
 interface Tween { t: number; dur: number; ease: Ease; apply: (v: number) => void; resolve: () => void }
 
 interface LiveCandle { g: Graphics; label: Text; mult: number; masked: boolean; phase: number; osc: number; revealing?: boolean }
-type CellSprite = Container & { cellData: Cell; idlePhase: number; gleam?: Graphics; sheetIdle?: boolean; mc?: LiveCandle; candleSprite?: AnimatedSprite };
+type CellSprite = Container & { cellData: Cell; idlePhase: number; content: Container; symbol?: Container; gleam?: Graphics; sheetIdle?: boolean; mc?: LiveCandle; candleSprite?: AnimatedSprite };
 
 /** Format a mystery multiplier for the tile label (0.15× / 1× / 25×). */
 function fmtMult(v: number): string {
@@ -83,6 +87,15 @@ const IDLE: Record<SymbolId, { bob?: number; bobMs?: number; rot?: number; rotMs
 };
 
 const GLEAM = new Set<SymbolId>(['diamond', 'coinT']);
+
+// Tile skin per symbol (0 = bronze/tan, 1 = green, 2 = blue/silver) — variety across the
+// board while staying consistent per symbol. Anything unlisted falls back to bronze.
+const TILE_VARIANT: Partial<Record<SymbolId, number>> = {
+	terminal: 0, scatter: 0, vault: 0, orb: 0,
+	bull: 1, diamond: 1, moneygun: 1,
+	goldbar: 2, bear: 2, rocket: 2,
+	coinG: 1, coinP: 2, coinB: 0, coinT: 1, whale: 2, frog: 1, moon: 2,
+};
 
 const PARTICLE: Record<SymbolId, number> = {
 	goldbar: 0xf7c843, bull: 0xffa24d, bear: 0xf0414d, moneygun: 0x3bd45f, vault: 0xf7c843, terminal: 0x27d7f5,
@@ -128,6 +141,8 @@ export class SlotBoard {
 	private firstSpin = true;
 	private textures = new Map<SymbolId, Texture>();
 	private anims = new Map<string, SheetAnim>();
+	private tileTexes: Texture[] = [];     // [0]=bronze [1]=green [2]=blue
+	private boardBgTex!: Texture;
 	private fadeMaskTex!: Texture;
 	private time = 0;
 	private idleOn = false;
@@ -148,6 +163,13 @@ export class SlotBoard {
 		this.app.stage.addChild(this.root);
 		this.fadeMaskTex = this.buildFadeMask();
 
+		// bronze-framed board panel + the radial-burst tiles that sit behind every symbol
+		this.boardBgTex = await Assets.load<Texture>('/board_bg.png');
+		this.tileTexes = await Promise.all([
+			Assets.load<Texture>('/tile.png'),        // 0 bronze/tan
+			Assets.load<Texture>('/tile_green.png'),  // 1 green
+			Assets.load<Texture>('/tile_blue.png'),   // 2 blue/silver
+		]);
 		// custom art: any /symbols/<id>.png present is used; otherwise drawn fallback
 		await Promise.all(SYMBOL_IDS.map(async (id) => {
 			try {
@@ -201,14 +223,19 @@ export class SlotBoard {
 
 	// ---------- static chrome ----------
 	private drawFrame() {
-		const g = new Graphics();
-		// hard offset shadow (brand: chunky 3D, no gradients)
-		g.roundRect(8, 10, LW - 8, BOARD_H + FRAME * 2 - 2, 26).fill({ color: 0x000000, alpha: 0.45 });
-		g.roundRect(0, 0, LW, BOARD_H + FRAME * 2, 26).fill(0x171a22);
-		g.roundRect(0, 0, LW, BOARD_H + FRAME * 2, 26).stroke({ width: 3, color: 0x262b38 });
-		g.roundRect(FRAME - 8, FRAME - 8, BOARD_W + 16, BOARD_H + 16, 18).fill(0x0e1016);
-		g.roundRect(FRAME - 8, FRAME - 8, BOARD_W + 16, BOARD_H + 16, 18).stroke({ width: 2, color: GREEN, alpha: 0.35 });
-		this.root.addChild(g);
+		const panelH = BOARD_H + FRAME * 2;
+		// soft drop shadow behind the bronze panel (brand: chunky 3D)
+		const sh = new Graphics();
+		sh.roundRect(8, 12, LW - 4, panelH - 2, 26).fill({ color: 0x000000, alpha: 0.5 });
+		this.root.addChild(sh);
+		// the bronze-framed board panel image houses every tile; stretched to the panel so
+		// its inner dark well + green glow frames the 6x5 grid (tiles sit inside the opening)
+		const bg = new Sprite(this.boardBgTex);
+		bg.width = LW + 14;
+		bg.height = panelH + 14;
+		bg.x = -7;
+		bg.y = -7;
+		this.root.addChild(bg);
 	}
 
 	private buildMeter() {
@@ -307,16 +334,35 @@ export class SlotBoard {
 		const c = new Container() as CellSprite;
 		c.cellData = cell;
 		c.idlePhase = Math.random() * Math.PI * 2;
+
+		// radial-burst tile behind the symbol — skin varies per symbol for board variety
+		const tileBg = new Sprite(this.tileTexes[TILE_VARIANT[cell.sym] ?? 0]);
+		tileBg.anchor.set(0.5);
+		tileBg.scale.set(TILE_BG / tileBg.texture.width);
+		c.addChild(tileBg);
+
+		// `content` holds the symbol and is CLIPPED to the inside of the bronze frame, so
+		// idle + win animations play WITHIN the tile and never spill onto the board. The
+		// tile is the moving unit — on a win the whole cell (frame + clipped symbol) pops.
+		const mask = new Graphics();
+		mask.roundRect(-TILE_INNER / 2, -TILE_INNER / 2, TILE_INNER, TILE_INNER, TILE_INNER_R).fill(0xffffff);
+		c.addChild(mask);
+		const content = new Container();
+		content.mask = mask;
+		content.scale.set(SYM_SCALE);
+		c.addChild(content);
+		c.content = content;
+
 		const meta = SYMBOL_META[cell.sym];
 		const tex = this.textures.get(cell.sym);
 		const idleSheet = this.anims.get(`${cell.sym}_idle`);
 
 		if (cell.sym === 'orb') {
 			if (idleSheet) {
-				c.addChild(this.sheetSprite(idleSheet, 96), this.orbLabel(cell.orb ?? 2));
+				content.addChild(this.sheetSprite(idleSheet, 96), this.orbLabel(cell.orb ?? 2));
 				c.sheetIdle = true;
 			} else {
-				c.addChild(tex ? this.buildTexOrb(tex, cell.orb ?? 2) : this.buildOrb(cell.orb ?? 2));
+				content.addChild(tex ? this.buildTexOrb(tex, cell.orb ?? 2) : this.buildOrb(cell.orb ?? 2));
 			}
 			return c;
 		}
@@ -339,56 +385,49 @@ export class SlotBoard {
 			const candleSheet = this.anims.get('scatter_idle');
 			if (candleSheet) {
 				const cand = this.sheetSprite(candleSheet, 108);
-				c.addChild(cand, label);
+				content.addChild(cand, label);
 				c.candleSprite = cand;
 			} else {
-				c.addChild(g, label);
+				content.addChild(g, label);
 				this.drawLiveCandle(c);
 			}
 			return c;
 		}
 		if (idleSheet) {
-			c.addChild(this.sheetSprite(idleSheet, 92));
+			content.addChild(this.sheetSprite(idleSheet, 92));
 			c.sheetIdle = true;
 			this.addGleam(c);
 			return c;
 		}
 		if (tex) {
-			// custom art floats free on the board, Gates-style — no tile behind it
 			const sp = new Sprite(tex);
 			sp.anchor.set(0.5);
 			sp.scale.set(92 / Math.max(sp.texture.width, sp.texture.height));
-			c.addChild(sp);
+			content.addChild(sp);
 			this.addGleam(c);
 			return c;
 		}
 
-		const tile = new Graphics();
-		const t2 = TILE / 2;
-		tile.roundRect(-t2, -t2 + 5, TILE, TILE, 20).fill(meta.edge);       // hard bottom edge = chunky 3D
-		tile.roundRect(-t2, -t2, TILE, TILE - 5, 20).fill(meta.tile);
-		tile.roundRect(-t2, -t2, TILE, TILE - 5, 20).stroke({ width: 2, color: 0xffffff, alpha: 0.08 });
-		c.addChild(tile);
-
+		// drawn fallback (coins / emoji symbols) — sits on the bronze burst, no own tile
 		if (cell.sym in COIN_COLORS) {
 			const col = COIN_COLORS[cell.sym];
 			const coin = new Graphics();
 			coin.circle(0, 2, 33).fill(col.rim);
 			coin.circle(0, -2, 31).fill(col.face);
 			coin.circle(0, -2, 23).stroke({ width: 3, color: col.rim, alpha: 0.7 });
-			c.addChild(coin);
+			content.addChild(coin);
 			const glyph = new Text({
 				text: meta.glyph,
 				style: { fontFamily: 'DynaPuff', fontSize: 30, fontWeight: '700', fill: col.glyph },
 			});
 			glyph.anchor.set(0.5);
 			glyph.y = -2;
-			c.addChild(glyph);
+			content.addChild(glyph);
 		} else {
 			const glyph = new Text({ text: meta.glyph, style: { fontFamily: EMOJI_FONT, fontSize: 54 } });
 			glyph.anchor.set(0.5);
 			glyph.y = -2;
-			c.addChild(glyph);
+			content.addChild(glyph);
 		}
 		this.addGleam(c);
 		return c;
@@ -401,7 +440,7 @@ export class SlotBoard {
 		g.x = -15;
 		g.y = -17;
 		g.alpha = 0;
-		c.addChild(g);
+		c.content.addChild(g);
 		c.gleam = g;
 	}
 
@@ -546,11 +585,14 @@ export class SlotBoard {
 					if (sp.mc) continue; // scatter: its own live-candle animation
 					if (sp.gleam) sp.gleam.alpha = Math.max(0, Math.sin(this.time / 650 + sp.idlePhase * 2)) ** 6;
 					if (sp.sheetIdle) continue; // frames carry the motion
+					// idle motion moves the SYMBOL inside the tile (clipped), not the tile
+					// itself — the bronze frame stays put; the whole tile only moves on a win.
 					const idle = IDLE[sp.cellData.sym];
 					const p = sp.idlePhase;
-					sp.y = this.cy(r) + (idle.bob ? Math.sin(this.time / idle.bobMs! + p) * idle.bob : 0);
-					if (idle.rot) sp.rotation = Math.sin(this.time / idle.rotMs! + p) * idle.rot;
-					if (idle.pulse) sp.scale.set(1 + Math.sin(this.time / idle.pulseMs! + p) * idle.pulse);
+					const ct = sp.content;
+					ct.y = idle.bob ? Math.sin(this.time / idle.bobMs! + p) * idle.bob : 0;
+					if (idle.rot) ct.rotation = Math.sin(this.time / idle.rotMs! + p) * idle.rot;
+					ct.scale.set(SYM_SCALE * (idle.pulse ? 1 + Math.sin(this.time / idle.pulseMs! + p) * idle.pulse : 1));
 				}
 			}
 		}
@@ -972,118 +1014,58 @@ export class SlotBoard {
 		await Promise.all(jobs);
 	}
 
-	/** Per-symbol win celebration — each symbol leaves the board its own way. */
+	/** Win celebration: the whole TILE pops in place and the symbol's win sheet plays
+	 * CLIPPED inside its own tile (launch / flame / flip stay within the frame), then the
+	 * tile shrinks out so survivors collapse in. Nothing flies across the board. */
 	private async winExit(sp: CellSprite, sym: SymbolId): Promise<void> {
 		const color = PARTICLE[sym] ?? 0xffffff;
-		const x = sp.x, y0 = sp.y;
 
-		// premium path: play the symbol's full win sprite sheet when one exists.
-		// Pin the symbol's RESTING body (anchorX/Y) to the tile centre and scale
-		// so the body ~= tile size; the launch/jump/flame then overflows the cell
-		// naturally instead of the whole tall frame being shrunk to fit.
+		// swap the idle symbol for the win sheet, played once INSIDE the clipped content so
+		// it's masked to the tile. content.scale sizes it to the tile like the idle symbol.
+		let winAnim: AnimatedSprite | null = null;
 		const winSheet = this.anims.get(`${sym}_win`);
 		if (winSheet) {
+			for (const ch of sp.content.children) ch.visible = false;
 			const a = new AnimatedSprite(winSheet.frames);
 			a.anchor.set(winSheet.anchorX, winSheet.anchorY);
-			a.x = x;
-			a.y = y0;
 			a.animationSpeed = winSheet.fps / 60;
 			a.loop = false;
+			// Play the win sheet at the SAME on-screen size the symbol already is — the idle
+			// art and win art come from the same source resolution, so applying the idle's
+			// display scale keeps the rocket/etc. at rest-size (it launches, never balloons).
+			const idleSheet = this.anims.get(`${sym}_idle`);
+			const tex = this.textures.get(sym);
 			const fw = a.texture.width, fh = a.texture.height;
-			const TILE = 84;                            // body ~= one tile, never oversized
-			const scale = winSheet.bodyFrac
-				? TILE / (winSheet.bodyFrac * fw)       // body ~= one tile
-				: TILE / Math.max(fw, fh);              // fallback: fit whole frame
+			let scale: number;
+			if (idleSheet) scale = 92 / Math.max(idleSheet.frames[0].width, idleSheet.frames[0].height);
+			else if (tex) scale = 92 / Math.max(tex.width, tex.height);
+			else scale = winSheet.bodyFrac ? 92 / (winSheet.bodyFrac * fw) : 92 / Math.max(fw, fh);
 			a.scale.set(scale);
-			// soft fade: opaque over this cell, transparent ~1 tile above it, so the
-			// FULL launch plays but ghosts out as it leaves the slot — never hard-cut,
-			// never solidly covering the tile stacked above.
-			const m = new Sprite(this.fadeMaskTex);
-			m.anchor.set(0.5, 0);
-			m.x = x;
-			m.y = y0 - CELL / 2 - this.FADE_TOP;        // fade→opaque boundary sits at the cell top
-			a.mask = m;
-			this.fxLayer.addChild(m, a);
-			sp.destroy();
-			this.burst(x, y0, color, 7);
-			await new Promise<void>((resolve) => {
-				a.onComplete = () => resolve();
-				a.play();
-			});
-			await sleep(90);                            // let the final frame breathe
-			await this.tween(120, inCubic, (v) => { a.alpha = 1 - v; });
-			a.mask = null;
-			m.destroy();
-			a.destroy();
-			return;
+			sp.content.addChild(a);
+			a.play();
+			winAnim = a;
 		}
-		switch (sym) {
-			case 'rocket': {
-				// flames ignite, rocket launches off the top of the board
-				this.burst(x, y0 + 30, 0xff9a3d, 8);
-				await this.tween(300, inCubic, (v) => {
-					sp.y = y0 - v * (y0 + 170);
-					sp.rotation = -0.08 * v;
-					if (v > 0.25 && Math.random() < 0.4) this.burst(sp.x, sp.y + 34, 0xff9a3d, 1);
-				});
-				sp.destroy();
-				return;
-			}
-			case 'whale': {
-				// jumps and splashes
-				await this.tween(330, (t) => t, (v) => {
-					sp.y = y0 - Math.sin(v * Math.PI) * 48;
-					sp.rotation = Math.sin(v * Math.PI * 2) * 0.2;
-				});
-				this.burst(x, y0 + 16, 0x5aa2ff, 12);
-				break;
-			}
-			case 'frog': {
-				// squash, spring and pop
-				await this.tween(200, outCubic, (v) => {
-					sp.scale.set(1 + 0.3 * v, 1 - 0.35 * v);
-				});
-				await this.tween(160, outBack, (v) => {
-					sp.scale.set(1.3 - 0.3 * v, 0.65 + 0.55 * v);
-					sp.y = y0 - v * 26;
-				});
-				this.burst(x, y0, color, 10);
-				break;
-			}
-			case 'coinG': case 'coinP': case 'coinB': case 'coinT': {
-				// coin flip (x-scale cosine) then burst in its own color
-				await this.tween(300, (t) => t, (v) => {
-					sp.scale.x = Math.abs(Math.cos(v * Math.PI * 3)) * (1 - v * 0.2) + 0.01;
-				});
-				this.burst(x, y0, color, 9);
-				break;
-			}
-			case 'moon': {
-				// spins with golden particles
-				this.burst(x, y0, 0xf7c843, 7);
-				await this.tween(320, outCubic, (v) => {
-					sp.rotation = v * Math.PI * 3;
-				});
-				break;
-			}
-			case 'diamond': {
-				// bright flash and fragments
-				const flash = new Graphics();
-				flash.circle(0, 0, 44).fill({ color: 0xffffff, alpha: 0.9 });
-				flash.x = x; flash.y = y0;
-				this.fxLayer.addChild(flash);
-				void this.tween(240, outCubic, (v) => { flash.alpha = 0.9 * (1 - v); flash.scale.set(1 + v * 0.8); })
-					.then(() => flash.destroy());
-				this.burst(x, y0, 0xcfeaff, 12);
-				await sleep(180);
-				break;
-			}
-			default: {
-				this.burst(x, y0, color, 8);
-				this.burst(x, y0, GREEN, 4);
-			}
+
+		// the TILE reacts in place — a springy pop + tiny jiggle (frame + clipped symbol
+		// move as one unit); ends back at rest so the win sheet keeps playing centred.
+		this.burst(sp.x, sp.y, color, 6);
+		await this.tween(300, outBack, (v) => {
+			sp.scale.set(1 + 0.18 * Math.sin(v * Math.PI));
+			sp.rotation = Math.sin(v * Math.PI * 2) * 0.05;
+		});
+
+		// let the win sheet finish (bounded so a cascade never stalls), else a short beat
+		if (winAnim) {
+			await Promise.race([
+				new Promise<void>((resolve) => { winAnim!.onComplete = () => resolve(); }),
+				sleep(1600),
+			]);
+		} else {
+			await sleep(200);
 		}
-		await this.tween(150, inCubic, (v) => { sp.scale.set(Math.max(0.01, 1 - v)); sp.alpha = 1 - v; });
+
+		// clear the tile out (shrink + fade) so survivors collapse into its place
+		await this.tween(160, inCubic, (v) => { sp.scale.set(Math.max(0.01, 1 - v)); sp.alpha = 1 - v; });
 		sp.destroy();
 	}
 
