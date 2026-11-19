@@ -350,13 +350,20 @@ export class SlotBoard {
 		const idleSheet = this.anims.get(`${cell.sym}_idle`);
 
 		if (cell.sym === 'orb') {
-			// multiplier orb = the SAME live god-candle animation as the scatter, with the
-			// xN multiplier printed on it (replaces the old gold-coin look).
-			const g = new Graphics();
+			// multiplier orb = the SAME candlestick SPRITE as the scatter, with the xN
+			// multiplier printed on it (consistent with the mystery-candle tiles).
 			const label = this.orbLabel(cell.orb ?? 2);
-			c.mc = { g, label, mult: cell.orb ?? 2, masked: true, phase: Math.random() * 2600, osc: 0 };
-			content.addChild(g, label);
-			this.drawLiveCandle(c);
+			const candleSheet = this.anims.get('scatter_idle');
+			if (candleSheet) {
+				const cand = this.sheetSprite(candleSheet, 108);
+				content.addChild(cand, label);
+				c.candleSprite = cand;
+			} else {
+				const g = new Graphics();
+				c.mc = { g, label, mult: cell.orb ?? 2, masked: true, phase: Math.random() * 2600, osc: 0 };
+				content.addChild(g, label);
+				this.drawLiveCandle(c);
+			}
 			return c;
 		}
 		if (cell.sym === 'scatter') {
