@@ -23,6 +23,11 @@ const GREEN = 0x2be26a;
 const RED = 0xf0414d;
 const GOLD = 0xf7c843;
 const CYAN = 0x27d7f5;
+// TradingView-realistic candlestick palette (matches the Trends app lightweight-charts
+// config: upColor #22C55E / downColor #ef4444, borderVisible:false, hairline wicks).
+const TV_UP = 0x22c55e;
+const TV_DOWN = 0xef4444;
+const TV_GRID = 0xffffff;      // drawn at low alpha — rgba(255,255,255,0.04)
 const EMOJI_FONT = 'Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, sans-serif';
 
 // ---------- tweens ----------
@@ -497,16 +502,12 @@ export class SlotBoard {
 		const maxH = st.masked ? 34 : 14 + Math.max(0, Math.log(Math.max(1, st.mult))) * 13;
 		const bodyH = Math.max(4, maxH * st.osc);
 		const top = base - bodyH;
-		// aura
-		g.roundRect(-18, top - 8, 36, bodyH + 20, 9).fill({ color: GREEN, alpha: 0.14 });
-		// gold base ring
-		g.ellipse(0, base + 7, 18, 5).fill(GOLD);
-		g.ellipse(0, base + 7, 18, 5).stroke({ width: 2, color: 0xb8860b });
-		// wick + body
-		g.rect(-2, top - 7, 4, 8).fill(GREEN);
-		g.roundRect(-13, top, 26, bodyH, 5).fill(GREEN);
-		g.roundRect(-13, top, 26, bodyH, 5).stroke({ width: 2, color: 0x0f7a38 });
-		g.roundRect(-8, top + 3, 6, Math.max(4, bodyH - 6), 3).fill({ color: 0xffffff, alpha: 0.2 });
+		// TradingView-style mini candle: sharp filled body + hairline upper/lower wicks,
+		// no gold pedestal / glow aura / gloss (matches the realistic takeover chart).
+		const wickUp = 7 + bodyH * 0.18;
+		g.rect(-1, top - wickUp, 2, wickUp).fill(TV_UP);   // upper wick
+		g.rect(-1, base, 2, 6).fill(TV_UP);                // lower wick
+		g.rect(-12, top, 24, bodyH).fill(TV_UP);           // body
 	}
 
 	/** Advance a god-candle tile: slow in-place rise then fall (close climbs toward its
@@ -1220,7 +1221,7 @@ export class SlotBoard {
 		bigMult.anchor.set(0.5); bigMult.x = centreX; bigMult.y = FRAME + 34;
 		title.visible = false;
 		const chip = new Text({
-			text: '', style: { fontFamily: 'IBM Plex Mono', fontSize: 13, fontWeight: '600', fill: 0x052012 },
+			text: '', style: { fontFamily: 'IBM Plex Mono', fontSize: 13, fontWeight: '600', fill: 0xffffff },
 		});
 		chip.anchor.set(0, 0.5);
 		ov.addChild(bigMult, chip);
@@ -1253,18 +1254,19 @@ export class SlotBoard {
 			const step = span > 400 ? 100 : span > 160 ? 50 : span > 60 ? 20 : span > 24 ? 10 : span > 10 ? 5 : span > 4 ? 2 : span > 2 ? 1 : 0.5;
 			for (let m = Math.ceil(yLo / step) * step; m < yHi; m += step) {
 				const yy = yOf(m);
-				gridG.moveTo(padL, yy).lineTo(padL + iw, yy).stroke({ width: 1, color: 0x1b2030 });
+				gridG.moveTo(padL, yy).lineTo(padL + iw, yy).stroke({ width: 1, color: TV_GRID, alpha: 0.04 });
 			}
 
 			candleG.clear();
+			// TradingView-style OHLC candle: sharp filled body (no border, no glow) + a
+			// hairline wick in the same colour. Crisp rects (not strokes) stay pixel-sharp.
 			const dc = (i: number, o: number, h: number, l: number, c: number) => {
 				const bx = xOf(i); if (bx + CW < padL) return;
-				const col = c >= o ? GREEN : RED, cxp = bx + CW / 2;
+				const col = c >= o ? TV_UP : TV_DOWN, cxp = bx + CW / 2;
 				const yO = yOf(o / 100), yC = yOf(c / 100), yH = yOf(h / 100), yL = yOf(l / 100);
-				const top = Math.min(yO, yC), bh = Math.max(3, Math.abs(yC - yO));
-				candleG.roundRect(bx - 2, top - 2, CW + 4, bh + 4, 4).fill({ color: col, alpha: 0.16 });
-				candleG.moveTo(cxp, yH).lineTo(cxp, yL).stroke({ width: 2.5, color: col, alpha: 0.95 });
-				candleG.roundRect(bx, top, CW, bh, 3).fill(col);
+				const top = Math.min(yO, yC), bh = Math.max(1, Math.abs(yC - yO));
+				candleG.rect(cxp - 0.75, yH, 1.5, Math.max(1, yL - yH)).fill(col);   // wick
+				candleG.rect(bx, top, CW, bh).fill(col);                             // body
 			};
 			for (let i = 0; i < cur; i++) dc(i, completed[i][0], completed[i][1], completed[i][2], completed[i][3]);
 			if (live) dc(cur, live.open, live.high, live.low, live.price);
@@ -1272,12 +1274,13 @@ export class SlotBoard {
 			pulseG.clear();
 			const price = live ? live.price : (cur ? completed[cur - 1][3] : 100);
 			const py = yOf(price / 100);
-			for (let px = padL; px < padL + iw + 20; px += 14) pulseG.moveTo(px, py).lineTo(px + 7, py).stroke({ width: 2, color: CYAN, alpha: 0.65 });
-			const dot = 4 + Math.sin(this.time / 140) * 1.6;
-			pulseG.circle(xLast + CW / 2, py, dot + 5).fill({ color: CYAN, alpha: 0.18 });
-			pulseG.circle(xLast + CW / 2, py, dot).fill(CYAN);
-			pulseG.roundRect(padL + iw + 4, py - 12, 80, 24, 7).fill(CYAN);
-			chip.text = `${(price / 100).toFixed(2)}x`; chip.position.set(padL + iw + 12, py);
+			// TradingView-style current-price line: a thin dashed line in the live candle's
+			// colour with a clean solid label on the right axis (no pulsing glow dot).
+			const pcol = live ? (live.price >= live.open ? TV_UP : TV_DOWN)
+				: (cur && completed[cur - 1][3] >= completed[cur - 1][0] ? TV_UP : TV_DOWN);
+			for (let px = padL; px < padL + iw; px += 9) pulseG.moveTo(px, py).lineTo(px + 4, py).stroke({ width: 1, color: pcol, alpha: 0.5 });
+			pulseG.rect(padL + iw + 4, py - 11, 80, 22).fill(pcol);
+			chip.text = `${(price / 100).toFixed(2)}x`; chip.position.set(padL + iw + 11, py);
 
 			const mm = price / 100;
 			bigMult.text = `${mm.toFixed(mm >= 100 ? 0 : 2)}x`;
